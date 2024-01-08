@@ -92,7 +92,8 @@ public enum Mixins {
             ,"sodium.AccessorBiomeColorEvent"
             ,"sodium.MixinBiomeGenBase"
             ,"sodium.MixinChunk"
-            ,"sodium.MixinChunkProviderServer"
+            // disabled due to tps lags
+           // ,"sodium.MixinChunkProviderServer"
             ,"sodium.MixinClientRegistry"
             ,"sodium.MixinEntity"
             ,"sodium.MixinRenderManager"
