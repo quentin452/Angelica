@@ -38,11 +38,11 @@ public class AngelicaConfig {
     public static boolean enableNotFineFeatures;
 
     @Config.Comment("Tweak F3 screen to be closer to modern versions. [From ArchaicFix]")
-    @Config.DefaultBoolean(true)
+    @Config.DefaultBoolean(false)
     public static boolean modernizeF3Screen;
 
     @Config.Comment("Show block registry name and meta value in F3, similar to 1.8+. [From ArchaicFix]")
-    @Config.DefaultBoolean(true)
+    @Config.DefaultBoolean(false)
     public static boolean showBlockDebugInfo;
 
     @Config.DefaultBoolean(true)
@@ -50,7 +50,7 @@ public class AngelicaConfig {
     public static boolean hideDownloadingTerrainScreen;
 
     @Config.Comment("Show memory usage during game load. [From ArchaicFix]")
-    @Config.DefaultBoolean(true)
+    @Config.DefaultBoolean(false)
     public static boolean showSplashMemoryBar;
 
 
