@@ -26,20 +26,25 @@ public abstract class MixinChunk {
 
     @Inject(method = "fillChunk", at = @At("RETURN"))
     private void sodium$populateBiomes(CallbackInfo ci) {
-        if(this.worldObj.isRemote && !Minecraft.getMinecraft().isSingleplayer()) {
+        if (this.worldObj != null && this.worldObj.isRemote && !Minecraft.getMinecraft().isSingleplayer() && (this.blockBiomeArray != null)) {
             // We are in multiplayer, the server might not have sent all biomes to the client.
             // Populate them now while we're on the main thread.
-            WorldChunkManager manager =  this.worldObj.getWorldChunkManager();
-            for(int z = 0; z < 16; z++) {
-                for(int x = 0; x < 16; x++) {
-                    int idx = (z << 4) + x;
-                    int biome = this.blockBiomeArray[idx] & 255;
-                    if(biome == 255) {
-                        BiomeGenBase generated = manager.getBiomeGenAt((this.xPosition << 4) + x, (this.zPosition << 4) + z);
-                        this.blockBiomeArray[idx] = (byte)(generated.biomeID & 255);
+                WorldChunkManager manager = this.worldObj.getWorldChunkManager();
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        int idx = (z << 4) + x;
+                        if (idx < this.blockBiomeArray.length) {
+                            int biome = this.blockBiomeArray[idx] & 255;
+                            if (biome == 255) {
+                                BiomeGenBase generated = manager.getBiomeGenAt((this.xPosition << 4) + x, (this.zPosition << 4) + z);
+                                if (generated != null) {
+                                    this.blockBiomeArray[idx] = (byte) (generated.biomeID & 255);
+                                }
+                            }
+                        }
                     }
                 }
-            }
+
         }
     }
 }
