@@ -27,6 +27,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Vector3d;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -408,11 +410,17 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                     // Perform the build task with this worker's local resources and obtain the result
                     result = job.task.performBuild(this.cache, this.bufferCache, job);
                 } catch (Exception e) {
+                    e.printStackTrace();
+
                     // Propagate any exception from chunk building
                     job.future.completeExceptionally(e);
                     continue;
                 } finally {
-                    job.task.releaseResources();
+                    try {
+                        job.task.releaseResources();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 // The result can be null if the task is cancelled
@@ -423,7 +431,12 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                     LockSupport.unpark(GLStateManager.getMainThread());
                 } else if (!job.isCancelled()) {
                     // If the job wasn't cancelled and no result was produced, we've hit a bug
-                    job.future.completeExceptionally(new RuntimeException("No result was produced by the task"));
+                    RuntimeException exception = new RuntimeException("No result was produced by the task");
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    exception.printStackTrace(pw);
+
+                    job.future.completeExceptionally(new RuntimeException(sw.toString()));
                 }
             }
         }
