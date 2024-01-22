@@ -3,6 +3,7 @@ package me.jellysquid.mods.sodium.client.gui;
 import com.google.common.collect.ImmutableList;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
 import jss.notfine.core.Settings;
+import me.flashyreese.mods.reeses_sodium_options.client.gui.ReeseSodiumVideoOptionsScreen;
 import me.jellysquid.mods.sodium.client.gui.options.OptionFlag;
 import me.jellysquid.mods.sodium.client.gui.options.OptionGroup;
 import me.jellysquid.mods.sodium.client.gui.options.OptionImpact;
@@ -76,6 +77,8 @@ public class SodiumGameOptionPages {
                 .setBinding((opts, value) -> opts.gammaSetting = value * 0.01F, (opts) -> (int) (opts.gammaSetting / 0.01F))
                 .build());
         firstGroupBuilder.add(Settings.MODE_SKY.option);
+        firstGroupBuilder.add(Settings.MODE_SUN_MOON.option);
+        firstGroupBuilder.add(Settings.MODE_STARS.option);
         firstGroupBuilder.add(OptionImpl.createBuilder(boolean.class, vanillaOpts)
                 .setName(I18n.format("sodium.options.clouds.name"))
                 .setTooltip(I18n.format("sodium.options.clouds.tooltip"))
@@ -94,7 +97,10 @@ public class SodiumGameOptionPages {
                         .setBinding((opts, value) -> {
                             opts.guiScale = value;
                             // Resizing our window
-                            if(Minecraft.getMinecraft().currentScreen instanceof SodiumOptionsGUI oldGui) {
+                            if(Minecraft.getMinecraft().currentScreen instanceof ReeseSodiumVideoOptionsScreen oldGui) {
+                                Minecraft.getMinecraft().displayGuiScreen(new ReeseSodiumVideoOptionsScreen(oldGui.prevScreen));
+                            }
+                            else if(Minecraft.getMinecraft().currentScreen instanceof SodiumOptionsGUI oldGui) {
                                 Minecraft.getMinecraft().displayGuiScreen(new SodiumOptionsGUI(oldGui.prevScreen));
                             }
                         }, opts -> opts.guiScale)

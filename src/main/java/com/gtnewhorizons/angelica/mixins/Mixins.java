@@ -195,6 +195,11 @@ public enum Mixins {
             "angelica.animation.MixinRenderBlockFluid",
             "angelica.animation.MixinWorldRenderer",
             "angelica.animation.MixinRenderItem")),
+    
+    SPEEDUP_CAMPFIRE_BACKPORT_ANIMATIONS(new Builder("Add animation speedup support to Campfire Backport").setPhase(Phase.LATE)
+            .addTargetedMod(TargetedMod.CAMPFIRE_BACKPORT).setSide(Side.CLIENT)
+            .setApplyIf(() -> AngelicaConfig.speedupAnimations)
+            .addMixinClasses("client.campfirebackport.MixinRenderBlockCampfire")),
 
     IC2_FLUID_RENDER_FIX(new Builder("IC2 Fluid Render Fix").setPhase(Phase.EARLY).setSide(Side.CLIENT)
         .addTargetedMod(TargetedMod.IC2).setApplyIf(() -> AngelicaConfig.speedupAnimations)
@@ -232,8 +237,13 @@ public enum Mixins {
             ,"notfine.settings.MixinGameSettings"
             //,"notfine.toggle.MixinGuiIngame"
             //,"notfine.toggle.MixinEntityRenderer"
-            ,"notfine.toggle.MixinRender"
+            //,"notfine.toggle.MixinRender" --> No Sodium below
             //,"notfine.toggle.MixinRenderItem"
+        )),
+
+    NOTFINE_FEATURES_NO_SODIUM(new Builder("NotFine Features").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
+        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures && !AngelicaConfig.enableSodium).addMixinClasses(
+            "notfine.toggle.MixinRender"
         )),
 
     NOTFINE_FEATURES_NO_MCPF_CIT(new Builder("NotFine Features which clash with mcpf cit (compat handled in MCPF_NF mixin)").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
