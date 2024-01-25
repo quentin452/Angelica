@@ -36,6 +36,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.concurrent.ExecutionException;
+
 import static org.joml.Math.lerp;
 
 // Let other mixins apply, and then overwrite them
@@ -75,6 +77,8 @@ public class MixinRenderGlobal implements IRenderGlobalExt {
         RenderDevice.enterManagedCode();
         try {
             this.renderer.setWorld(world);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
             RenderDevice.exitManagedCode();
         }
@@ -200,7 +204,7 @@ public class MixinRenderGlobal implements IRenderGlobalExt {
      * @reason Redirect to our renderer
      */
     @Overwrite
-    public void clipRenderersByFrustum(ICamera frustrum, float partialTicks) {
+    public void clipRenderersByFrustum(ICamera frustrum, float partialTicks) throws ExecutionException, InterruptedException {
         // Roughly equivalent to setupTerrain
         RenderDevice.enterManagedCode();
 
@@ -258,7 +262,7 @@ public class MixinRenderGlobal implements IRenderGlobalExt {
     }
 
     @Inject(method = "loadRenderers", at = @At("RETURN"))
-    private void onReload(CallbackInfo ci) {
+    private void onReload(CallbackInfo ci) throws ExecutionException, InterruptedException {
         RenderDevice.enterManagedCode();
 
         try {

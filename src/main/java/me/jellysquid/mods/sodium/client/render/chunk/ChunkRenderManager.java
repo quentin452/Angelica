@@ -45,6 +45,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkStatusListener {
     /**
@@ -126,7 +127,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
 
 
-    public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, WorldClient world, int renderDistance) {
+    public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, WorldClient world, int renderDistance) throws ExecutionException, InterruptedException {
         this.backend = backend;
         this.renderer = renderer;
         this.world = world;
@@ -622,7 +623,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.builder.setCameraPosition(x, y, z);
     }
 
-    public void destroy() {
+    public void destroy() throws ExecutionException, InterruptedException {
         this.reset();
 
         for (ChunkRenderColumn<T> column : this.columns.values()) {

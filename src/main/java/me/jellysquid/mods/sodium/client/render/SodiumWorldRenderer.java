@@ -50,6 +50,7 @@ import net.minecraftforge.client.MinecraftForgeClient;
 import org.joml.Vector3d;
 
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Provides an extension to vanilla's {@link WorldRenderer}.
@@ -107,7 +108,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.client = client;
     }
 
-    public void setWorld(WorldClient world) {
+    public void setWorld(WorldClient world) throws ExecutionException, InterruptedException {
         // Check that the world is actually changing
         if (this.world == world) {
             return;
@@ -128,7 +129,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         return this.chunkRenderManager != null ? this.chunkRenderManager.getAndResetSubmitted() : 0;
     }
 
-    private void loadWorld(WorldClient world) {
+    private void loadWorld(WorldClient world) throws ExecutionException, InterruptedException {
         this.world = world;
 
         ChunkRenderCacheShared.createRenderContext(this.world);
@@ -136,7 +137,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.initRenderer();
     }
 
-    private void unloadWorld() {
+    private void unloadWorld() throws ExecutionException, InterruptedException {
         ChunkRenderCacheShared.destroyRenderContext(this.world);
 
         if (this.chunkRenderManager != null) {
@@ -185,7 +186,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     /**
      * Called prior to any chunk rendering in order to update necessary state.
      */
-    public void updateChunks(Camera camera, Frustrum frustum, boolean hasForcedFrustum, int frame, boolean spectator) {
+    public void updateChunks(Camera camera, Frustrum frustum, boolean hasForcedFrustum, int frame, boolean spectator) throws ExecutionException, InterruptedException {
         this.frustum = frustum;
 
         this.useEntityCulling = SodiumClientMod.options().advanced.useEntityCulling;
@@ -270,7 +271,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         GLStateManager.clearCurrentColor();
     }
 
-    public void reload() {
+    public void reload() throws ExecutionException, InterruptedException {
         if (this.world == null) {
             return;
         }
@@ -278,7 +279,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.initRenderer();
     }
 
-    private void initRenderer() {
+    private void initRenderer() throws ExecutionException, InterruptedException {
         if (this.chunkRenderManager != null) {
             this.chunkRenderManager.destroy();
             this.chunkRenderManager = null;

@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -123,7 +124,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * down, all tasks are cancelled and the pending queues are cleared. If the builder is already stopped, this
      * method does nothing and exits.
      */
-    public void stopWorkers() {
+    public void stopWorkers() throws ExecutionException, InterruptedException {
         if (!this.running.getAndSet(false)) {
             return;
         }
@@ -157,7 +158,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
         this.failureQueue.clear();
 
         for (WrappedTask<?> job : this.buildQueue) {
-            job.future.cancel(true);
+            job.future.get();
         }
 
         this.buildQueue.clear();
@@ -185,7 +186,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
             // Allow a result to replace the previous result in the map if one of the following conditions hold:
             // * There is no previous upload in the queue
             // * The new upload replaces more render types than the old one (in practice, is a rebuild while the other is a sort)
-            if(oldResult == null || result.passesToUpload.length >= oldResult.passesToUpload.length) {
+            if (oldResult == null || result.passesToUpload.length >= oldResult.passesToUpload.length) {
                 map.put(section, result);
             }
         }
@@ -216,7 +217,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
 
             if (ex instanceof ReportedException) {
                 // Propagate ReportedExceptions directly to provide extra information
-                throw (ReportedException)ex;
+                throw (ReportedException) ex;
             } else {
                 throw new RuntimeException("Chunk build failed", ex);
             }
@@ -264,9 +265,10 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * Initializes this chunk builder for the given world. If the builder is already running (which can happen during
      * a world teleportation event), the worker threads will first be stopped and all pending tasks will be discarded
      * before being started again.
+     *
      * @param world The world instance
      */
-    public void init(WorldClient world) {
+    public void init(WorldClient world) throws ExecutionException, InterruptedException {
         if (world == null) {
             throw new NullPointerException("World is null");
         }
@@ -310,6 +312,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * Creates a rebuild task and defers it to the work queue. When the task is completed, it will be moved onto the
      * completed uploads queued which will then be drained during the next available synchronization point with the
      * main thread.
+     *
      * @param render The render to rebuild
      */
     public void deferRebuild(ChunkRenderContainer<T> render) {
@@ -320,6 +323,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * Creates a rebuild task and defers it to the work queue. When the task is completed, it will be moved onto the
      * completed uploads queued which will then be drained during the next available synchronization point with the
      * main thread.
+     *
      * @param render The render to rebuild
      */
     public void deferSort(ChunkRenderContainer<T> render) {
@@ -330,6 +334,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
     /**
      * Enqueues the build task result to the pending result queue to be later processed during the next available
      * synchronization point on the main thread.
+     *
      * @param result The build task's result
      */
     private void enqueueUpload(ChunkBuildResult<T> result) {
@@ -338,6 +343,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
 
     /**
      * Schedules the rebuild task asynchronously on the worker pool, returning a future wrapping the task.
+     *
      * @param render The render to rebuild
      */
     public CompletableFuture<ChunkBuildResult<T>> scheduleRebuildTaskAsync(ChunkRenderContainer<T> render) {
@@ -346,6 +352,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
 
     /**
      * Schedules the rebuild task asynchronously on the worker pool, returning a future wrapping the task.
+     *
      * @param render The render to rebuild
      */
     public CompletableFuture<ChunkBuildResult<T>> scheduleSortTaskAsync(ChunkRenderContainer<T> render) {
@@ -354,6 +361,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
 
     /**
      * Creates a task to rebuild the geometry of a {@link ChunkRenderContainer}.
+     *
      * @param render The render to rebuild
      */
     private ChunkRenderBuildTask<T> createRebuildTask(ChunkRenderContainer<T> render) {
@@ -470,7 +478,8 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
             this.future = new CompletableFuture<>();
             this.future.exceptionally(e -> {
                 LOGGER.info("Exception thrown while building chunk", e);
-//                e.printStackTrace();
+
+// e.printStackTrace();
                 return null;
             });
         }
