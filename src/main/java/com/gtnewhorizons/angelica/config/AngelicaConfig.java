@@ -32,7 +32,7 @@ public class AngelicaConfig {
     public static boolean enableNotFineOptimizations;
 
     @Config.Comment("Replace some vanilla render paths with more optimized versions. Disable if you encounter mixin conflicts.")
-    @Config.DefaultBoolean(false)
+    @Config.DefaultBoolean(true)
     @Config.RequiresMcRestart
     public static boolean enableVBO;
 
