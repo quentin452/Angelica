@@ -438,13 +438,9 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                     // Unpark the main thread so it wakes up if it was blocking on the future having completed
                     LockSupport.unpark(GLStateManager.getMainThread());
                 } else if (!job.isCancelled()) {
-                    // If the job wasn't cancelled and no result was produced, we've hit a bug
-                    RuntimeException exception = new RuntimeException("No result was produced by the task");
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    exception.printStackTrace(pw);
-
-                    job.future.completeExceptionally(new RuntimeException(sw.toString()));
+                    // If the job wasn't cancelled and no result was produced, log the issue and complete the future exceptionally
+                    LOGGER.error("No result was produced by the task: {}", job.task);
+                    job.future.completeExceptionally(new RuntimeException("No result was produced by the task"));
                 }
             }
         }
