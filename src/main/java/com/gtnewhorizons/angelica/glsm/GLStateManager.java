@@ -598,8 +598,8 @@ public class GLStateManager {
     }
 
     public static void glDeleteTextures(IntBuffer ids) {
-        for(int i = 0; i < ids.capacity(); i++) {
-            onDeleteTexture(ids.get(i));
+        while (ids.remaining() > 0) {
+            onDeleteTexture(ids.get());
         }
 
         textures.getTextureUnitBindings(GLStateManager.activeTextureUnit.topInt()).setBinding(-1);
