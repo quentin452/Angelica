@@ -461,6 +461,10 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                 }
             }
 
+            if (job != null && job.isCancelled()) {
+                return null;
+            }
+
             return job;
         }
     }
