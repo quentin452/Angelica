@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -246,6 +247,10 @@ public class BatchingFontRenderer {
         // Sort&Draw
         batchCommands.sort(FontDrawCmd.DRAW_ORDER_COMPARATOR);
 
+        final boolean isTextureEnabledBefore = GLStateManager.glIsEnabled(GL11.GL_TEXTURE_2D);
+        final int boundTextureBefore = GLStateManager.getBoundTexture();
+        boolean textureChanged = false;
+
         ResourceLocation lastTexture = DUMMY_RESOURCE_LOCATION;
         GLStateManager.enableTexture();
         GLStateManager.enableAlphaTest();
@@ -274,7 +279,8 @@ public class BatchingFontRenderer {
                     GLStateManager.disableTexture();
                 }
                 if (cmd.texture != null) {
-                    ((FontRendererAccessor) (Object) underlying).angelica$bindTexture(cmd.texture);
+                    ((FontRendererAccessor) underlying).angelica$bindTexture(cmd.texture);
+                    textureChanged = true;
                 }
                 lastTexture = cmd.texture;
             }
@@ -284,6 +290,13 @@ public class BatchingFontRenderer {
         }
 
         glPopClientAttrib();
+
+        if (isTextureEnabledBefore) {
+        	GLStateManager.enableTexture();
+        }
+        if (textureChanged) {
+        	GLStateManager.glBindTexture(GL11.GL_TEXTURE_2D, boundTextureBefore);
+        }
 
         // Clear for the next batch
         batchCommandPool.addAll(batchCommands);
