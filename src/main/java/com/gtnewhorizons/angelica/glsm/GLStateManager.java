@@ -598,12 +598,9 @@ public class GLStateManager {
     }
 
     public static void glDeleteTextures(IntBuffer ids) {
-        while (ids.remaining() > 0) {
-            onDeleteTexture(ids.get());
+        for(int i = 0; i < ids.capacity(); i++) {
+            onDeleteTexture(ids.get(i));
         }
-
-        textures.getTextureUnitBindings(GLStateManager.activeTextureUnit.topInt()).setBinding(-1);
-        GL11.glDeleteTextures(ids);
     }
 
     public static void enableTexture() {
