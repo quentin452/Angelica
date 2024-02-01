@@ -124,47 +124,48 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * down, all tasks are cancelled and the pending queues are cleared. If the builder is already stopped, this
      * method does nothing and exits.
      */
-    public void stopWorkers() throws ExecutionException, InterruptedException {
-        if (!this.running.getAndSet(false)) {
+    public void stopWorkers() throws InterruptedException {
+        if (!running.getAndSet(false)) {
             return;
         }
 
-        if (this.threads.isEmpty()) {
+        if (threads.isEmpty()) {
             throw new IllegalStateException("No threads are alive but the executor is in the RUNNING state");
         }
 
         LOGGER.info("Stopping worker threads");
 
         // Notify all worker threads to wake up, where they will then terminate
-        synchronized (this.jobNotifier) {
-            this.jobNotifier.notifyAll();
+        synchronized (jobNotifier) {
+            jobNotifier.notifyAll();
         }
 
         // Keep processing the main thread tasks so the workers don't block forever
         AngelicaRenderQueue.managedBlock(() -> !workersAlive());
 
         // Ensure every remaining thread has terminated
-        for (Thread thread : this.threads) {
+        for (Thread thread : threads) {
             try {
                 thread.join();
             } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
             }
         }
 
-        this.threads.clear();
+        threads.clear();
 
         // Drop any pending work queues and cancel futures
-        this.uploadQueue.clear();
-        this.failureQueue.clear();
+        uploadQueue.clear();
+        failureQueue.clear();
 
-        for (WrappedTask<?> job : this.buildQueue) {
-            job.future.get();
+        for (WrappedTask<?> job : buildQueue) {
+            job.future.cancel(true);
         }
 
-        this.buildQueue.clear();
+        buildQueue.clear();
 
-        this.world = null;
-        this.sectionCache = null;
+        world = null;
+        sectionCache = null;
     }
 
     public void cleanupSectionCache() {
