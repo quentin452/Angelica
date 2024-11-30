@@ -1,7 +1,7 @@
 package com.gtnewhorizons.angelica.glsm;
 
 import com.google.common.collect.ImmutableSet;
-import com.gtnewhorizons.angelica.glsm.stacks.IStateStack;
+import com.gtnewhorizon.gtnhlib.client.renderer.stacks.IStateStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL11;
@@ -50,12 +50,11 @@ public class Feature {
             // GL_COLOR_LOGIC_OP enable bit
             // GL_INDEX_LOGIC_OP enable bit
             // Logic op function
-            , GLStateManager.colorMask  // Color mode and index mode writemasks
-            , GLStateManager.color      // Color mode and index mode writemasks
-            , GLStateManager.clearColor // Color mode and index mode clear values
+            , GLStateManager.colorMask   // Color-mode and index-mode writemasks
+            , GLStateManager.clearColor  // Color-mode and index-mode clear values
         ));
         attribToFeatures.put(GL11.GL_CURRENT_BIT, ImmutableSet.of(
-            // Current RGBA color
+              GLStateManager.color  // Current RGBA color
             // Current color index
             // Current normal vector
             // Current texture coordinates
@@ -78,13 +77,20 @@ public class Feature {
             // GL_AUTO_NORMAL flag
             , GLStateManager.blendMode // GL_BLEND flag
             // Enable bits for the user-definable clipping planes
-            // GL_COLOR_MATERIAL
+            , GLStateManager.colorMaterial // GL_COLOR_MATERIAL
             , GLStateManager.cullState // GL_CULL_FACE flag
             , GLStateManager.depthTest // GL_DEPTH_TEST flag
             // GL_DITHER flag
             , GLStateManager.fogMode // GL_FOG flag
-            // GL_LIGHTi where 0 <= i < GL_MAX_LIGHTS
-            // GL_LIGHTING flag
+            , GLStateManager.lightStates[0] // GL_LIGHT0
+            , GLStateManager.lightStates[1] // GL_LIGHT1
+            , GLStateManager.lightStates[2] // GL_LIGHT2
+            , GLStateManager.lightStates[3] // GL_LIGHT3
+            , GLStateManager.lightStates[4] // GL_LIGHT4
+            , GLStateManager.lightStates[5] // GL_LIGHT5
+            , GLStateManager.lightStates[6] // GL_LIGHT6
+            , GLStateManager.lightStates[7] // GL_LIGHT7
+            , GLStateManager.lightingState // GL_LIGHTING flag
             // GL_LINE_SMOOTH flag
             // GL_LINE_STIPPLE flag
             // GL_INDEX_LOGIC_OP flag
@@ -102,7 +108,7 @@ public class Feature {
             // GL_SAMPLE_ALPHA_TO_COVERAGE flag
             // GL_SAMPLE_ALPHA_TO_ONE flag
             // GL_SAMPLE_COVERAGE flag
-            // GL_SCISSOR_TEST flag
+            , GLStateManager.scissorTest  // GL_SCISSOR_TEST flag
             // GL_STENCIL_TEST flag
             // GL_TEXTURE_1D flag
             // GL_TEXTURE_2D flag - Below
@@ -142,21 +148,37 @@ public class Feature {
             // GL_TEXTURE_COMPRESSION_HINT setting
         ));
         attribToFeatures.put(GL11.GL_LIGHTING_BIT, ImmutableSet.of(
-            // GL_COLOR_MATERIAL enable bit
-            // GL_COLOR_MATERIAL_FACE value
-            // Color material parameters that are tracking the current color
-            // Ambient scene color
-            // GL_LIGHT_MODEL_LOCAL_VIEWER value
-            // GL_LIGHT_MODEL_TWO_SIDE setting
-            // GL_LIGHTING enable bit
+            GLStateManager.colorMaterial // GL_COLOR_MATERIAL enable bit
+            , GLStateManager.colorMaterialFace // GL_COLOR_MATERIAL_FACE value
+            , GLStateManager.colorMaterialParameter // Color material parameters that are tracking the current color
+            , GLStateManager.lightModel // Ambient scene color, GL_LIGHT_MODEL_LOCAL_VIEWER, GL_LIGHT_MODEL_TWO_SIDE
+            , GLStateManager.lightingState  // GL_LIGHTING enable bit
             // Enable bit for each light
+            , GLStateManager.lightStates[0] // GL_LIGHT0
+            , GLStateManager.lightStates[1] // GL_LIGHT1
+            , GLStateManager.lightStates[2] // GL_LIGHT2
+            , GLStateManager.lightStates[3] // GL_LIGHT3
+            , GLStateManager.lightStates[4] // GL_LIGHT4
+            , GLStateManager.lightStates[5] // GL_LIGHT5
+            , GLStateManager.lightStates[6] // GL_LIGHT6
+            , GLStateManager.lightStates[7] // GL_LIGHT7
             // Ambient, diffuse, and specular intensity for each light
             // Direction, position, exponent, and cutoff angle for each light
             // Constant, linear, and quadratic attenuation factors for each light
+            , GLStateManager.lightDataStates[0]
+            , GLStateManager.lightDataStates[1]
+            , GLStateManager.lightDataStates[2]
+            , GLStateManager.lightDataStates[3]
+            , GLStateManager.lightDataStates[4]
+            , GLStateManager.lightDataStates[5]
+            , GLStateManager.lightDataStates[6]
+            , GLStateManager.lightDataStates[7]
             // Ambient, diffuse, specular, and emissive color for each material
             // Ambient, diffuse, and specular color indices for each material
             // Specular exponent for each material
-            // GL_SHADE_MODEL setting
+            , GLStateManager.frontMaterial
+            , GLStateManager.backMaterial
+            , GLStateManager.shadeModelState // GL_SHADE_MODEL setting
         ));
         attribToFeatures.put(GL11.GL_LINE_BIT, ImmutableSet.of(
             // GL_LINE_SMOOTH flag
@@ -207,7 +229,7 @@ public class Feature {
             // Polygon stipple pattern
         ));
         attribToFeatures.put(GL11.GL_SCISSOR_BIT, ImmutableSet.of(
-            // GL_SCISSOR_TEST enable bit
+              GLStateManager.scissorTest // GL_SCISSOR_TEST enable bit
             // Scissor box
         ));
         attribToFeatures.put(GL11.GL_STENCIL_BUFFER_BIT, ImmutableSet.of(
@@ -219,11 +241,14 @@ public class Feature {
             // Stencil buffer writemask
         ));
         final Set<IStateStack<?>> textureAttribs = new HashSet<>(ImmutableSet.of(
+            GLStateManager.activeTextureUnit // Active texture unit
                 // Enable bits for the four texture coordinates
+
                 // Border color for each texture image
                 // Minification function for each texture image
                 // Magnification function for each texture image
                 // Texture coordinates and wrap mode for each texture image
+
                 // Color and mode for each texture environment
                 // Enable bits GL_TEXTURE_GEN_x, x is S, T, R, and Q
                 // GL_TEXTURE_GEN_MODE setting for S, T, R, and Q
@@ -234,15 +259,17 @@ public class Feature {
         // Current Texture Bindings - GL_TEXTURE_BINDING_2D
         for(int i = 0 ; i < GLStateManager.MAX_TEXTURE_UNITS; i++) {
             textureAttribs.add(GLStateManager.textures.getTextureUnitBindings(i));
+//            textureAttribs.add(GLStateManager.textures.getInfo(i))
         }
 
         attribToFeatures.put(GL11.GL_TEXTURE_BIT, textureAttribs);
+
         attribToFeatures.put(GL11.GL_TRANSFORM_BIT, ImmutableSet.of(
             // Coefficients of the six clipping planes
             // Enable bits for the user-definable clipping planes
-             GLStateManager.matrixMode
+              GLStateManager.matrixMode
             // GL_NORMALIZE flag
-            // GL_RESCALE_NORMAL flag
+            , GLStateManager.rescaleNormalState // GL_RESCALE_NORMAL flag
         ));
         attribToFeatures.put(GL11.GL_VIEWPORT_BIT, ImmutableSet.of(
             // Depth range (near and far)

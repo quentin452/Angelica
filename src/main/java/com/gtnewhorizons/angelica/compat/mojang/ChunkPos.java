@@ -1,5 +1,7 @@
 package com.gtnewhorizons.angelica.compat.mojang;
 
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+
 // See if we can merge/mixin/extend ChunkCoordIntPair?
 public class ChunkPos {
     public static long INT_MASK   = (1L << Integer.SIZE) - 1;

@@ -1,5 +1,6 @@
 package com.gtnewhorizons.angelica.glsm.stacks;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.stacks.IStateStack;
 import com.gtnewhorizons.angelica.glsm.GLStateManager;
 import com.gtnewhorizons.angelica.glsm.states.BlendState;
 
@@ -34,4 +35,7 @@ public class BlendStateStack extends BlendState implements IStateStack<BlendStat
         return this;
     }
 
+    public boolean isEmpty() {
+        return pointer == 0;
+    }
 }

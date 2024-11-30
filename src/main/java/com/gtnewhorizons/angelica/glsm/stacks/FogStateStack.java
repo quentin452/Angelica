@@ -1,5 +1,6 @@
 package com.gtnewhorizons.angelica.glsm.stacks;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.stacks.IStateStack;
 import com.gtnewhorizons.angelica.glsm.GLStateManager;
 import com.gtnewhorizons.angelica.glsm.states.FogState;
 
@@ -34,4 +35,7 @@ public class FogStateStack extends FogState implements IStateStack<FogStateStack
         return this;
     }
 
+    public boolean isEmpty() {
+        return pointer == 0;
+    }
 }

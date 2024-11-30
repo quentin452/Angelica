@@ -4,6 +4,8 @@ import com.gtnewhorizons.angelica.glsm.dsa.DSAARB;
 import com.gtnewhorizons.angelica.glsm.dsa.DSAAccess;
 import com.gtnewhorizons.angelica.glsm.dsa.DSACore;
 import com.gtnewhorizons.angelica.glsm.dsa.DSAUnsupported;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3i;
@@ -21,12 +23,12 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import static com.gtnewhorizons.angelica.loading.AngelicaTweaker.LOGGER;
 
 /**
  * This class is responsible for abstracting calls to OpenGL and asserting that calls are run on the render thread.
  */
 public class RenderSystem {
+    private static final Logger LOGGER = LogManager.getLogger("RenderSystem");
 	private static DSAAccess dsaState;
 	private static boolean hasMultibind;
 	private static boolean supportsCompute;
@@ -50,6 +52,7 @@ public class RenderSystem {
         } catch (NoSuchFieldError ignored) {}
         if (dsaState == null) {
             dsaState = new DSAUnsupported();
+            LOGGER.info("No DSA support detected, falling back to legacy OpenGL.");
         }
 
         try {
@@ -236,7 +239,7 @@ public class RenderSystem {
 		dsaState.bindTextureToUnit(unit, texture);
 	}
 
-    public static FloatBuffer PROJECTION_MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
+    public static final FloatBuffer PROJECTION_MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
     public static void setupProjectionMatrix(Matrix4f matrix) {
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glPushMatrix();

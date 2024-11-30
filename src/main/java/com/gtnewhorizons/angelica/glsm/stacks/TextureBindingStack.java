@@ -1,5 +1,6 @@
 package com.gtnewhorizons.angelica.glsm.stacks;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.stacks.IStateStack;
 import com.gtnewhorizons.angelica.glsm.GLStateManager;
 import com.gtnewhorizons.angelica.glsm.states.TextureBinding;
 
@@ -36,5 +37,9 @@ public class TextureBindingStack extends TextureBinding implements IStateStack<T
 
     public TextureBinding peek() {
         return stack[pointer];
+    }
+
+    public boolean isEmpty() {
+        return pointer == 0;
     }
 }

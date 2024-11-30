@@ -1,12 +1,12 @@
 package me.jellysquid.mods.sodium.client.model.light.flat;
 
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.ModelQuadView;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFlags;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
 import me.jellysquid.mods.sodium.client.model.light.LightPipeline;
 import me.jellysquid.mods.sodium.client.model.light.data.LightDataAccess;
 import me.jellysquid.mods.sodium.client.model.light.data.QuadLightData;
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFlags;
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -40,7 +40,7 @@ public class FlatLightPipeline implements LightPipeline {
             if ((flags & ModelQuadFlags.IS_ALIGNED) != 0 || ((flags & ModelQuadFlags.IS_PARALLEL) != 0 && LightDataAccess.unpackFC(this.lightCache.get(pos)))) {
                 lightmap = getOffsetLightmap(pos, face);
             } else {
-                lightmap = LightDataAccess.unpackLM(this.lightCache.get(pos));
+                lightmap = LightDataAccess.getLightMap(this.lightCache.get(pos));
             }
         }
 
@@ -58,10 +58,10 @@ public class FlatLightPipeline implements LightPipeline {
      * inconsistent values so this method exists to mirror vanilla behavior as closely as possible.
      */
     private int getOffsetLightmap(BlockPos pos, ForgeDirection face) {
-        int lightmap = LightDataAccess.unpackLM(this.lightCache.get(pos, face));
+        int lightmap = LightDataAccess.getLightMap(this.lightCache.get(pos, face));
         // If the block light is not 15 (max)...
         if ((lightmap & 0xF0) != 0xF0) {
-            int originLightmap = LightDataAccess.unpackLM(this.lightCache.get(pos));
+            int originLightmap = LightDataAccess.getLightMap(this.lightCache.get(pos));
             // ...take the maximum combined block light at the origin and offset positions
             lightmap = (lightmap & ~0xFF) | Math.max(lightmap & 0xFF, originLightmap & 0xFF);
         }

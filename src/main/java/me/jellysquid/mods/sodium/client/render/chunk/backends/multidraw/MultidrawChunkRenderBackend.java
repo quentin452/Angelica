@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.backends.multidraw;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFacing;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -22,7 +23,6 @@ import me.jellysquid.mods.sodium.client.gl.tessellation.GlPrimitiveType;
 import me.jellysquid.mods.sodium.client.gl.tessellation.GlTessellation;
 import me.jellysquid.mods.sodium.client.gl.tessellation.TessellationBinding;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
@@ -42,6 +42,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.Util;
 import org.lwjgl.opengl.GL11;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -238,19 +239,38 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
             commandList.uploadData(this.commandBuffer, this.commandClientBufferBuilder.getBuffer());
         }
 
-        long pointer = this.commandBuffer == null ? this.commandClientBufferBuilder.getBufferAddress() : 0L;
+        long pointer = 0L;
+        ByteBuffer pointerBuffer;
+        int originalPointerBufferPos = 0;
+        if (this.commandBuffer != null) {
+            pointerBuffer = null;
+        } else {
+            pointerBuffer = this.commandClientBufferBuilder.getBuffer();
+            originalPointerBufferPos = pointerBuffer.position();
+        }
 
         for (ChunkRegion<?> region : this.pendingBatches) {
             final ChunkDrawCallBatcher batch = region.getDrawBatcher();
 
             if (!batch.isEmpty()) {
 	            try (DrawCommandList drawCommandList = commandList.beginTessellating(region.getTessellation())) {
-	                drawCommandList.multiDrawArraysIndirect(pointer, batch.getCount(), 0 /* tightly packed */);
+	                if(pointerBuffer == null) {
+	                    drawCommandList.multiDrawArraysIndirect(pointer, batch.getCount(), 0 /* tightly packed */);
+	                } else {
+	                    drawCommandList.multiDrawArraysIndirect(pointerBuffer, batch.getCount(), 0 /* tightly packed */);
+	                }
 	            }
             }
 
-            pointer += batch.getArrayLength();
+            if(pointerBuffer == null) {
+                pointer += batch.getArrayLength();
+            } else {
+                pointerBuffer.position(pointerBuffer.position() + batch.getArrayLength());
+            }
         }
+
+        if (pointerBuffer != null)
+            pointerBuffer.position(originalPointerBufferPos);
 
         this.pendingBatches.clear();
     }

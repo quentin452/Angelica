@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 import com.gtnewhorizons.angelica.compat.mojang.ChunkSectionPos;
 import com.gtnewhorizons.angelica.utils.AnimationsRenderUtils;
 import lombok.Getter;

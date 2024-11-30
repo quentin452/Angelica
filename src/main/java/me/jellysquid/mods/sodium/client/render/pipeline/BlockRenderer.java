@@ -1,20 +1,29 @@
 package me.jellysquid.mods.sodium.client.render.pipeline;
 
-import com.gtnewhorizons.angelica.client.renderer.CapturingTessellator;
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
-import com.gtnewhorizons.angelica.compat.nd.Quad;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizon.gtnhlib.client.renderer.CapturingTessellator;
+import com.gtnewhorizon.gtnhlib.client.renderer.TessellatorManager;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.QuadProvider;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.QuadView;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFacing;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadOrientation;
+import com.gtnewhorizon.gtnhlib.client.renderer.util.DirectionUtil;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
-import com.gtnewhorizons.angelica.glsm.TessellatorManager;
+import com.gtnewhorizons.angelica.mixins.interfaces.ModeledBlock;
+import com.gtnewhorizons.angelica.utils.ObjectPooler;
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.model.light.LightMode;
 import me.jellysquid.mods.sodium.client.model.light.LightPipeline;
 import me.jellysquid.mods.sodium.client.model.light.LightPipelineProvider;
 import me.jellysquid.mods.sodium.client.model.light.data.QuadLightData;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadOrientation;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.Quad;
+
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
+import me.jellysquid.mods.sodium.client.render.occlusion.BlockOcclusionCache;
 import me.jellysquid.mods.sodium.client.util.ModelQuadUtil;
+import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.rand.XoRoShiRoRandom;
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.minecraft.block.Block;
@@ -34,83 +43,111 @@ public class BlockRenderer {
     private final QuadLightData cachedQuadLightData = new QuadLightData();
 
     private final boolean useAmbientOcclusion;
+    private final boolean useSodiumAO;
     private boolean useSeparateAo;
 
     private final LightPipelineProvider lighters;
+    private final BlockOcclusionCache occlusionCache;
+
+    private Object Quad;
+    private final ObjectPooler<QuadView> quadPool = new ObjectPooler<>(Quad::new);
+    // TODO: Use modern model API, and store them here
 
 
     public BlockRenderer(LightPipelineProvider lighters) {
         this.lighters = lighters;
         // TODO: Sodium - AO Setting
         this.useAmbientOcclusion = Minecraft.getMinecraft().gameSettings.ambientOcclusion > 0;
+        this.useSodiumAO = SodiumClientMod.options().quality.useSodiumAO;
+        this.occlusionCache = new BlockOcclusionCache();
     }
 
     public boolean renderModel(IBlockAccess world, RenderBlocks renderBlocks, Block block, int meta, BlockPos pos, ChunkModelBuffers buffers, boolean cull, long seed) {
-        final LightMode mode = this.getLightingMode(block);
+        final LightMode mode = LightMode.SMOOTH; // TODO: this.getLightingMode(block); is what was previously used. The flat pipeline is busted and was only an optimization for very few blocks.
         final LightPipeline lighter = this.lighters.getLighter(mode);
 
         this.useSeparateAo = AngelicaConfig.enableIris && BlockRenderingSettings.INSTANCE.shouldUseSeparateAo();
 
         boolean rendered = false;
+        final QuadProvider model = ((ModeledBlock) block).getModel();
 
-        try {
-            TessellatorManager.startCapturing();
-            final CapturingTessellator tess = (CapturingTessellator) TessellatorManager.get();
-            tess.startDrawingQuads();
-            // RenderBlocks adds the subchunk-relative coordinates as the offset, cancel it out here
+        if (model != null) {
 
-            tess.setOffset(pos);
-            renderBlocks.renderBlockByRenderType(block, pos.x, pos.y, pos.z);
-            final List<Quad> quads = TessellatorManager.stopCapturingToPooledQuads();
-            tess.resetOffset();
+            final int color = model.getColor(world, pos, block, meta, random);
 
-            for (ModelQuadFacing facing : ModelQuadFacing.VALUES) {
+            for (ForgeDirection dir : DirectionUtil.ALL_DIRECTIONS) {
+
                 this.random.setSeed(seed);
-                this.renderQuadList(pos, lighter, buffers, quads, facing);
+                List<QuadView> quads;
+
+                if (!cull || this.occlusionCache.shouldDrawSide(block, meta, world, pos, dir)) {
+                    quads = model.getQuads(world, pos, block, meta, dir, random, color, this.quadPool::getInstance);
+                    if (quads.isEmpty()) continue;
+
+                    this.renderQuadList(pos, lighter, buffers, quads, ModelQuadFacing.fromDirection(dir), true);
+                    rendered = true;
+
+                    if (model.isDynamic())
+                        for (QuadView q : quads) this.quadPool.releaseInstance(q);
+                }
             }
+        } else {
 
-            if (!quads.isEmpty()) rendered = true;
-        } finally {
-            TessellatorManager.cleanup();
+            try {
+                TessellatorManager.startCapturing();
+                final CapturingTessellator tess = (CapturingTessellator) TessellatorManager.get();
+                tess.startDrawingQuads();
+                // RenderBlocks adds the subchunk-relative coordinates as the offset, cancel it out here
+
+                tess.setOffset(pos);
+                renderBlocks.renderBlockByRenderType(block, pos.x, pos.y, pos.z);
+                final List<QuadView> quads = TessellatorManager.stopCapturingToPooledQuads();
+                tess.resetOffset();
+
+                for (ModelQuadFacing facing : ModelQuadFacing.VALUES) {
+                    this.random.setSeed(seed);
+                    this.renderQuadList(pos, lighter, buffers, quads, facing, (this.useAmbientOcclusion && this.useSodiumAO));
+                }
+
+                if (!quads.isEmpty()) rendered = true;
+            } finally {
+                TessellatorManager.cleanup();
+            }
         }
-
 
         return rendered;
     }
 
-    private void renderQuadList(BlockPos pos, LightPipeline lighter, ChunkModelBuffers buffers, List<Quad> quads, ModelQuadFacing facing) {
+    private void renderQuadList(BlockPos pos, LightPipeline lighter, ChunkModelBuffers buffers, List<QuadView> quads, ModelQuadFacing facing, boolean useSodiumLight) {
+        final ForgeDirection cullFace = ModelQuadFacing.toDirection(facing);
 
         final ModelVertexSink sink = buffers.getSink(facing);
         sink.ensureCapacity(quads.size() * 4);
-        final ForgeDirection cullFace = ModelQuadFacing.toDirection(facing);
 
         final ChunkRenderData.Builder renderData = buffers.getRenderData();
 
         // This is a very hot allocation, iterate over it manually
         // noinspection ForLoopReplaceableByForEach
         for (int i = 0, quadsSize = quads.size(); i < quadsSize; i++) {
-            final Quad quad = quads.get(i);
-
-            if(quad.normal != facing)
-                continue;
+            final QuadView quad = quads.get(i);
 
             final QuadLightData light = this.cachedQuadLightData;
 
-            // TODO: use Sodium pipeline always
-            if(this.useSeparateAo) {
-                lighter.calculate(quad, pos, light, cullFace, quad.getFace(), quad.hasShade());
-            }
+            if (quad.getFace() != cullFace)
+                continue;
 
+            if (useSodiumLight || this.useSeparateAo)
+                lighter.calculate(quad, pos, light, cullFace, quad.getLightFace(), quad.isShade());
 
-            this.renderQuad(sink, quad, light, renderData);
+            this.renderQuad(sink, quad, light, renderData, useSodiumLight);
         }
 
         sink.flush();
     }
 
-    private void renderQuad(ModelVertexSink sink, Quad quad, QuadLightData light, ChunkRenderData.Builder renderData) {
+    private void renderQuad(ModelVertexSink sink, QuadView quad, QuadLightData light, ChunkRenderData.Builder renderData, boolean useSodiumLight) {
 
-        final ModelQuadOrientation order = useSeparateAo ? ModelQuadOrientation.orient(light.br) : ModelQuadOrientation.NORMAL;
+        final ModelQuadOrientation order = (useSodiumLight || this.useSeparateAo) ? ModelQuadOrientation.orient(light.br) : ModelQuadOrientation.NORMAL;
 
         for (int dstIndex = 0; dstIndex < 4; dstIndex++) {
             final int srcIndex = order.getVertexIndex(dstIndex);
@@ -124,13 +161,16 @@ public class BlockRenderer {
             if (useSeparateAo) {
                 color &= 0x00FFFFFF;
                 color |= ((int) (ao * 255.0f)) << 24;
+            } else {
+
+                color = (useSodiumLight) ? ColorABGR.mul(quad.getColor(srcIndex), light.br[srcIndex]) : quad.getColor(srcIndex);
             }
 
             final float u = quad.getTexU(srcIndex);
             final float v = quad.getTexV(srcIndex);
 
-            final int quadLight = quad.getLight(srcIndex);
-            final int lm = useSeparateAo ? ModelQuadUtil.mergeBakedLight(quadLight, light.lm[srcIndex]) : quadLight;
+            final int lm = (useSeparateAo) ? ModelQuadUtil.mergeBakedLight(quad.getLight(srcIndex), light.lm[srcIndex]) :
+                (useSodiumLight) ? light.lm[srcIndex] : quad.getLight(srcIndex);
 
             sink.writeQuad(x, y, z, color, u, v, lm);
         }

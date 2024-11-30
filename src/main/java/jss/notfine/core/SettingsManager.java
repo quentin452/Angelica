@@ -57,8 +57,8 @@ public class SettingsManager {
 
     public static void cloudsUpdated() {
         if(Settings.MODE_CLOUDS.option.getStore() != GraphicsQualityOff.OFF) {
-            minimumFarPlaneDistance = 32 * (int)Settings.RENDER_DISTANCE_CLOUDS.option.getStore();
-            minimumFarPlaneDistance += Math.abs((int)Settings.CLOUD_HEIGHT.option.getStore());
+            minimumFarPlaneDistance = 32 * ((int)Settings.RENDER_DISTANCE_CLOUDS.option.getStore());
+            minimumFarPlaneDistance += (int)Settings.CLOUD_HEIGHT.option.getStore();
             mc.gameSettings.clouds = true;
         } else {
             minimumFarPlaneDistance = 128;
@@ -82,8 +82,6 @@ public class SettingsManager {
     }
 
     public static void leavesUpdated() {
-        //Do not re-enable, see MixinBlockLeaves workaround for Angelica/Sodium style menus.
-        //mc.renderGlobal.loadRenderers();
         LeavesQuality value = (LeavesQuality)Settings.MODE_LEAVES.option.getStore();
         leavesOpaque = value == LeavesQuality.FAST || (value == LeavesQuality.DEFAULT && !mc.gameSettings.fancyGraphics);
         Blocks.leaves.setGraphicsLevel(!leavesOpaque);

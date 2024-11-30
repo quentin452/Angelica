@@ -3,7 +3,6 @@ package me.jellysquid.mods.sodium.client.world.cloned;
 import com.falsepattern.endlessids.mixin.helpers.ChunkBiomeHook;
 import com.gtnewhorizons.angelica.compat.ExtendedBlockStorageExt;
 import com.gtnewhorizons.angelica.compat.ModStatus;
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
 import com.gtnewhorizons.angelica.compat.mojang.ChunkSectionPos;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
@@ -87,7 +86,7 @@ public class ClonedChunkSection {
 
                         if (tileentity != null)
                         {
-                            this.tileEntities.put(ChunkSectionPos.packLocal(new BlockPos(tileentity.xCoord & 15, tileentity.yCoord & 15, tileentity.zCoord & 15)), tileentity);
+                            this.tileEntities.put(ChunkSectionPos.packLocal(tileentity.xCoord & 15, tileentity.yCoord & 15, tileentity.zCoord & 15), tileentity);
                         }
                     }
                 }

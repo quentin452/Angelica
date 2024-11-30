@@ -4,7 +4,6 @@ import net.minecraft.block.Block;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 
-import com.prupe.mcpatcher.mal.block.BlockAPI;
 import com.prupe.mcpatcher.mal.block.BlockStateMatcher;
 
 final class BlockOrientation extends RenderBlockState {
@@ -31,9 +30,7 @@ final class BlockOrientation extends RenderBlockState {
         { WEST_FACE, EAST_FACE, NORTH_FACE, SOUTH_FACE, TOP_FACE, BOTTOM_FACE, 2, -2, -2, -2, 0, 0 },
         { NORTH_FACE, SOUTH_FACE, TOP_FACE, BOTTOM_FACE, WEST_FACE, EAST_FACE, 0, 0, 0, 0, -2, -2 }, };
 
-    private int i;
-    private int j;
-    private int k;
+    private int x, y, z;
     private int metadata;
     private int altMetadata;
     private int metadataBits;
@@ -47,29 +44,29 @@ final class BlockOrientation extends RenderBlockState {
     @Override
     public void clear() {
         super.clear();
-        i = j = k = 0;
+        x = y = z = 0;
         renderType = -1;
         metadata = 0;
         blockFace = textureFace = 0;
         rotateUV = 0;
         offsetsComputed = false;
         haveOffsets = false;
-        di = dj = dk = 0;
+        dx = dy = dz = 0;
     }
 
     @Override
-    public int getI() {
-        return i;
+    public int getX() {
+        return x;
     }
 
     @Override
-    public int getJ() {
-        return j;
+    public int getY() {
+        return y;
     }
 
     @Override
-    public int getK() {
-        return k;
+    public int getZ() {
+        return z;
     }
 
     @Override
@@ -88,18 +85,13 @@ final class BlockOrientation extends RenderBlockState {
     }
 
     @Override
-    public String getTextureFaceName() {
-        throw new UnsupportedOperationException("getTextureName");
-    }
-
-    @Override
     public int getFaceForHV() {
         return blockFace;
     }
 
     @Override
     public boolean match(BlockStateMatcher matcher) {
-        return isInWorld() ? matcher.match(blockAccess, i, j, k) : matcher.match(block, metadata);
+        return isInWorld() ? matcher.match(blockAccess, x, y, z) : matcher.match(block, metadata);
     }
 
     @Override
@@ -114,79 +106,59 @@ final class BlockOrientation extends RenderBlockState {
         }
         offsetsComputed = true;
         haveOffsets = false;
-        di = dj = dk = 0;
+        dx = dy = dz = 0;
         switch (renderType) {
-            case 1: // renderCrossedSquares
-                while (j + dj > 0 && block == BlockAPI.getBlockAt(blockAccess, i, j + dj - 1, k)) {
-                    dj--;
+            case 1 -> { // renderCrossedSquares
+                while (y + dy > 0 && block == blockAccess.getBlock(x, y + dy - 1, z)) {
+                    dy--;
                     haveOffsets = true;
                 }
-                break;
-
-            case 7: // renderBlockDoor
-            case 40: // renderBlockDoublePlant
-                if ((metadata & 0x8) != 0 && block == BlockAPI.getBlockAt(blockAccess, i, j - 1, k)) {
-                    dj--;
+            } // renderBlockDoor
+            case 7, 40 -> { // renderBlockDoublePlant
+                if ((metadata & 0x8) != 0 && block == blockAccess.getBlock(x, y - 1, z)) {
+                    dy--;
                     haveOffsets = true;
                 }
-                break;
-
-            case 14: // renderBlockBed
-                metadata = BlockAPI.getMetadataAt(blockAccess, i, j, k);
+            }
+            case 14 -> { // renderBlockBed
+                metadata = blockAccess.getBlockMetadata(x, y, z);
                 switch (metadata) {
-                    case 0:
-                    case 4:
-                        dk = 1; // head is one block south
-                        break;
-
-                    case 1:
-                    case 5:
-                        di = -1; // head is one block west
-                        break;
-
-                    case 2:
-                    case 6:
-                        dk = -1; // head is one block north
-                        break;
-
-                    case 3:
-                    case 7:
-                        di = 1; // head is one block east
-                        break;
-
-                    default:
+                    case 0, 4 -> dz = 1; // head is one block south
+                    case 1, 5 -> dx = -1; // head is one block west
+                    case 2, 6 -> dz = -1; // head is one block north
+                    case 3, 7 -> dx = 1; // head is one block east
+                    default -> {
                         return false; // head itself, no offset
+                    }
                 }
-                haveOffsets = block == BlockAPI.getBlockAt(blockAccess, i + di, j, k + dk);
-                break;
-
-            default:
-                break;
+                haveOffsets = block == blockAccess.getBlock(x + dx, y, z + dz);
+            }
+            default -> {
+            }
         }
         return haveOffsets;
     }
 
     @Override
-    public boolean shouldConnectByBlock(Block neighbor, int neighborI, int neighborJ, int neighborK) {
+    public boolean shouldConnectByBlock(Block neighbor, int neighborX, int neighborY, int neighborZ) {
         return block == neighbor
-            && (metadataBits & (1 << BlockAPI.getMetadataAt(blockAccess, neighborI, neighborJ, neighborK))) != 0;
+            && (metadataBits & (1 << blockAccess.getBlockMetadata(neighborX, neighborY, neighborZ))) != 0;
     }
 
     @Override
-    public boolean shouldConnectByTile(Block neighbor, IIcon origIcon, int neighborI, int neighborJ, int neighborK) {
-        return origIcon
-            == BlockAPI.getBlockIcon(neighbor, blockAccess, neighborI, neighborJ, neighborK, getTextureFaceOrig());
+    public boolean shouldConnectByTile(Block neighbor, IIcon origIcon, int neighborX, int neighborY, int neighborZ) {
+        return origIcon == neighbor.getIcon(blockAccess, neighborX, neighborY, neighborZ, getTextureFaceOrig());
     }
 
-    void setBlock(Block block, IBlockAccess blockAccess, int i, int j, int k) {
+    void setBlock(Block block, IBlockAccess blockAccess, int x, int y, int z) {
         this.block = block;
         this.blockAccess = blockAccess;
         inWorld = true;
-        this.i = i;
-        this.j = j;
-        this.k = k;
+        this.x = x;
+        this.y = y;
+        this.z = z;
         renderType = block.getRenderType();
-        metadata = altMetadata = BlockAPI.getMetadataAt(blockAccess, i, j, k);
+        metadata = altMetadata = blockAccess.getBlockMetadata(x, y, z);
         offsetsComputed = false;
     }
 
@@ -202,96 +174,77 @@ final class BlockOrientation extends RenderBlockState {
         this.block = block;
         blockAccess = null;
         inWorld = false;
-        i = j = k = 0;
+        x = y = z = 0;
         renderType = block.getRenderType();
         blockFace = textureFace = textureFaceOrig = face;
         this.metadata = metadata;
         metadataBits = 1 << metadata;
-        di = dj = dk = 0;
+        dx = dy = dz = 0;
         rotateUV = 0;
     }
 
     private int getBlockFaceByRenderType(int face) {
         switch (renderType) {
-            case 1: // renderCrossedSquares
+            case 1 -> { // renderCrossedSquares
                 return NORTH_FACE;
-
-            case 8: // renderBlockLadder
+            }
+            case 8 -> { // renderBlockLadder
                 switch (metadata) {
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
+                    case 2, 3, 4, 5 -> {
                         return metadata;
-
-                    default:
-                        break;
+                    }
                 }
-                break;
-
-            case 20: // renderBlockVine
+            }
+            case 20 -> { // renderBlockVine
                 switch (metadata) {
-                    case 1:
+                    case 1 -> {
                         return NORTH_FACE;
-
-                    case 2:
+                    }
+                    case 2 -> {
                         return EAST_FACE;
-
-                    case 4:
+                    }
+                    case 4 -> {
                         return SOUTH_FACE;
-
-                    case 8:
+                    }
+                    case 8 -> {
                         return WEST_FACE;
-
-                    default:
-                        break;
+                    }
                 }
-                break;
-
-            default:
-                break;
+            }
         }
         return face;
     }
 
     private int blockFaceToTextureFace(int face) {
         switch (renderType) {
-            case 31: // renderBlockLog (also applies to hay)
+            case 31 -> { // renderBlockLog (also applies to hay)
                 switch (metadata & 0xc) {
-                    case 4: // west-east
+                    case 4 -> { // west-east
                         altMetadata &= ~0xc;
                         rotateUV = ROTATE_UV_MAP[0][face + 6];
                         return ROTATE_UV_MAP[0][face];
-
-                    case 8: // north-south
+                    }
+                    case 8 -> { // north-south
                         altMetadata &= ~0xc;
                         rotateUV = ROTATE_UV_MAP[1][face + 6];
                         return ROTATE_UV_MAP[1][face];
-
-                    default:
-                        break;
+                    }
                 }
-                break;
-
-            case 39: // renderBlockQuartz
+            }
+            case 39 -> { // renderBlockQuartz
                 switch (metadata) {
-                    case 3: // north-south
+                    case 3 -> { // north-south
                         altMetadata = 2;
                         rotateUV = ROTATE_UV_MAP[2][face + 6];
                         return ROTATE_UV_MAP[2][face];
-
-                    case 4: // west-east
+                    }
+                    case 4 -> { // west-east
                         altMetadata = 2;
                         rotateUV = ROTATE_UV_MAP[3][face + 6];
                         return ROTATE_UV_MAP[3][face];
-
-                    default:
-                        break;
+                    }
                 }
-                break;
-
-            default:
-                break;
+            }
         }
         return face;
     }
@@ -300,10 +253,4 @@ final class BlockOrientation extends RenderBlockState {
         return (neighbor + rotateUV) & 7;
     }
 
-    boolean logIt() {
-        // return i == -31 && j == 72 && (k == 412 || k == 413);
-        // return j == 72 && (metadata == 7 || metadata == 11) && blockFace == 1 &&
-        // BlockAPI.getBlockName(block).equals("minecraft:log");
-        return false;
-    }
 }

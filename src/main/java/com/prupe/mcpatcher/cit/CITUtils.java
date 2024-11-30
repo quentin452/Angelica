@@ -27,8 +27,8 @@ import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.resource.TexturePackChangeHandler;
 import com.prupe.mcpatcher.mal.tile.TileLoader;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
-import com.gtnewhorizons.angelica.mixins.interfaces.NBTTagListExpansion;
+import jss.notfine.config.MCPatcherForgeConfig;
+import jss.notfine.util.NBTTagListExpansion;
 
 public class CITUtils {
 
@@ -46,9 +46,9 @@ public class CITUtils {
     static Item itemCompass;
     static Item itemClock;
 
-    static final boolean enableItems = MCPatcherForgeConfig.instance().citItems;
-    static final boolean enableEnchantments = MCPatcherForgeConfig.instance().citEnchantments;
-    static final boolean enableArmor = MCPatcherForgeConfig.instance().citArmor;
+    static final boolean enableItems = MCPatcherForgeConfig.CustomItemTextures.items;
+    static final boolean enableEnchantments = MCPatcherForgeConfig.CustomItemTextures.enchantments;
+    static final boolean enableArmor = MCPatcherForgeConfig.CustomItemTextures.armor;
 
     private static TileLoader tileLoader;
     private static final Map<Item, List<ItemOverride>> items = new IdentityHashMap<>();

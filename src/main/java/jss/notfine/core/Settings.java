@@ -1,6 +1,8 @@
 package jss.notfine.core;
 
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
+import com.gtnewhorizons.angelica.dynamiclights.DynamicLights;
+import com.gtnewhorizons.angelica.dynamiclights.DynamicLightsMode;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import jss.notfine.gui.options.control.NotFineControlValueFormatter;
@@ -38,13 +40,27 @@ public enum Settings {
             SettingsManager.cloudsUpdated();
         }
     },
-    CLOUD_SCALE(new NotFineOptionSlider(4, 2, 20, 1, null)),
+    CLOUD_SCALE(new NotFineOptionSlider(1, 1, 3, 1, null)),
     DOWNFALL_DISTANCE(new NotFineOptionCycling<>(DownfallQuality.DEFAULT, OptionImpact.MEDIUM)) {
         @Override
         public void applyChanges() {
             SettingsManager.downfallDistanceUpdated();
         }
     },
+    DYNAMIC_FOV(new NotFineOptionTickBox(true, null)),
+    DYNAMIC_LIGHTS(new NotFineOptionCycling(DynamicLightsMode.FANCY, OptionImpact.VARIES)){
+        @Override
+        public void applyChanges() {
+            DynamicLights.Mode = (DynamicLightsMode) this.option.getStore();
+        }
+    },
+    DYNAMIC_LIGHTS_SHADER_FORCE(new NotFineOptionTickBox(false, OptionImpact.VARIES)){
+        @Override
+        public void applyChanges() {
+            DynamicLights.ShaderForce = (boolean) this.option.getStore();
+        }
+    },
+    FOG_NEAR_DISTANCE(new NotFineOptionSliderPercentage(75, 1, 100, 1, OptionImpact.LOW)),
     GUI_BACKGROUND(new NotFineOptionCycling<>(BackgroundSelect.DEFAULT, null)) {
         @Override
         public void applyChanges() {
@@ -78,6 +94,7 @@ public enum Settings {
             SettingsManager.leavesUpdated();
         }
     },
+    MODE_LIGHT_FLICKER(new NotFineOptionTickBox(true, OptionImpact.LOW)),
     MODE_SHADOWS(new NotFineOptionCycling<>(GraphicsToggle.DEFAULT, OptionImpact.LOW)) {
         @Override
         public void applyChanges() {
@@ -101,18 +118,19 @@ public enum Settings {
     },
     PARTICLES_ENC_TABLE(new NotFineOptionSlider(1, 0, 16, 1, OptionImpact.LOW)),
     PARTICLES_VOID(new NotFineOptionTickBox(true, OptionImpact.LOW)),
-    RENDER_DISTANCE_CLOUDS(new NotFineOptionSlider(4, 4, 64, 2, OptionImpact.VARIES)) {
+    RENDER_DISTANCE_CLOUDS(new NotFineOptionSlider(4, 4, 64, 1, OptionImpact.VARIES)) {
         @Override
         public void applyChanges() {
             SettingsManager.cloudsUpdated();
         }
     },
-    TOTAL_STARS(new NotFineOptionSlider(1500, 0, 32000, 500, OptionImpact.LOW)) {
+    TOTAL_STARS(new NotFineOptionSlider(1500, 500, 32000, 500, OptionImpact.LOW)) {
         @Override
         public void applyChanges() {
             RenderStars.reloadStarRenderList(Minecraft.getMinecraft().renderGlobal);
         }
-    };
+    },
+    VOID_FOG(new NotFineOptionTickBox(false, OptionImpact.LOW));
 
     public final NotFineOption option;
 
@@ -160,8 +178,7 @@ public enum Settings {
 
         @Override
         public Control<Integer> getControl() {
-            //TODO: Don't hardcode CLOUD_SCALE check.
-            return new SliderControl(this, min, max, step, setting != Settings.CLOUD_SCALE ? ControlValueFormatter.number() : NotFineControlValueFormatter.multiplied(0.25f));
+            return new SliderControl(this, min, max, step, ControlValueFormatter.number());
         }
 
         @Override
@@ -175,6 +192,19 @@ public enum Settings {
             value = store;
             modifiedValue = store;
         }
+    }
+
+    public static class NotFineOptionSliderPercentage extends NotFineOptionSlider {
+
+        protected NotFineOptionSliderPercentage(int base, int min, int max, int step,  OptionImpact impact, OptionFlag... optionFlags) {
+            super(base, min, max, step, impact, optionFlags);
+        }
+
+        @Override
+        public Control<Integer> getControl() {
+            return new SliderControl(this, min, max, step, NotFineControlValueFormatter.percentage());
+        }
+
     }
 
     public static class NotFineOptionTickBox extends NotFineOption<Boolean> {
@@ -196,7 +226,6 @@ public enum Settings {
         }
 
     }
-
 
     public static abstract class NotFineOption<T> implements Option<T> {
         private static final NotFineMinecraftOptionsStorage optionStorage = new NotFineMinecraftOptionsStorage();

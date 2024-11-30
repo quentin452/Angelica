@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.gtnewhorizons.angelica.compat.mojang.ChunkSectionPos;
 import com.gtnewhorizons.angelica.compat.mojang.CompatMathHelper;
+import com.gtnewhorizons.angelica.dynamiclights.DynamicLights;
 import lombok.Getter;
 import me.jellysquid.mods.sodium.client.world.cloned.ChunkRenderContext;
 import me.jellysquid.mods.sodium.client.world.cloned.ClonedChunkSection;
@@ -184,9 +185,9 @@ public class WorldSlice implements IBlockAccess {
 
     @Override
     public int getLightBrightnessForSkyBlocks(int x, int y, int z, int min) {
-        if (y < 0 || y >= 256 || x < -30000000 || z < -30000000 || x >= 30000000 || z > 30000000) {
-            // skyBrightness = 15, blockBrightness = 0
-            return (15 << 20);
+        if (y < 0 || y >= 256 || x < -30_000_000 || z < -30_000_000 || x >= 30_000_000 || z >= 30_000_000) {
+            // skyBrightness = 15, blockBrightness = min
+            return (15 << 20) | (min << 4);
         }
 
         final int skyBrightness = this.getSkyBlockTypeBrightness(net.minecraft.world.EnumSkyBlock.Sky, x, y, z);
@@ -194,6 +195,10 @@ public class WorldSlice implements IBlockAccess {
 
         if (blockBrightness < min) {
             blockBrightness = min;
+        }
+
+        if (DynamicLights.isEnabled() && !getBlock(x, y, z).isOpaqueCube()) {
+            return DynamicLights.get().getLightmapWithDynamicLight(x, y, z, (skyBrightness << 20 | blockBrightness << 4));
         }
 
         return skyBrightness << 20 | blockBrightness << 4;
@@ -387,17 +392,17 @@ public class WorldSlice implements IBlockAccess {
     }
 
     // Modern checks if the sky is darkened, which only happens in the nether. However, I think 1.7.10's hasNoSky is
-    // close enough and possibly a behavior change between versions. I also don't know why it's rotationally asymmetric
+    // close enough.
     public float getBrightness(ForgeDirection direction, boolean shaded) {
+
         if (!shaded) {
             return world.provider.hasNoSky ? 0.9f : 1.0f;
         }
         return switch (direction) {
-            case DOWN -> world.provider.hasNoSky ? 0.9f : 0.5f;
-            case UP -> world.provider.hasNoSky ? 0.9f : 1.0f;
+            case DOWN -> 0.5f;
+            case UP -> 1.0f;
             case NORTH, SOUTH -> 0.8f;
-            case WEST, EAST -> 0.6f;
-            case UNKNOWN -> 1.0f;
+            default -> 0.6f;
         };
     }
 

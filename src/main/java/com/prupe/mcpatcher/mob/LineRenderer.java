@@ -11,7 +11,7 @@ import com.prupe.mcpatcher.mal.resource.PropertiesFile;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.util.InputHandler;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
 
 public class LineRenderer {
 
@@ -20,7 +20,7 @@ public class LineRenderer {
     private static final double D_WIDTH = 1.0 / 1024.0;
     private static final double D_POS = 1.0 / 256.0;
 
-    private static final boolean enable = MCPatcherForgeConfig.instance().leashLine;
+    private static final boolean enable = MCPatcherForgeConfig.RandomMobs.leashLine;
     private static final LineRenderer[] renderers = new LineRenderer[2];
 
     private final ResourceLocation texture;

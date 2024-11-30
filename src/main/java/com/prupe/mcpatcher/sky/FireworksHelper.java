@@ -13,7 +13,7 @@ import com.prupe.mcpatcher.mal.resource.GLAPI;
 import com.prupe.mcpatcher.mal.resource.PropertiesFile;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
 
 public class FireworksHelper {
 
@@ -23,7 +23,7 @@ public class FireworksHelper {
         .newMCPatcherResourceLocation("particle.properties");
 
     private static final MCLogger logger = MCLogger.getLogger(MCLogger.Category.BETTER_SKIES);
-    private static final boolean enable = MCPatcherForgeConfig.instance().brightenFireworks;
+    private static final boolean enable = MCPatcherForgeConfig.BetterSkies.brightenFireworks;
     private static BlendMethod blendMethod;
 
     public static int getFXLayer(EntityFX entity) {

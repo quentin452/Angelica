@@ -1,8 +1,8 @@
 package me.jellysquid.mods.sodium.client.model.light;
 
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.light.data.QuadLightData;
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import net.minecraftforge.common.util.ForgeDirection;
 
 /**

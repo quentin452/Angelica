@@ -14,15 +14,15 @@ import com.prupe.mcpatcher.mal.resource.PropertiesFile;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.resource.TexturePackChangeHandler;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
-import com.gtnewhorizons.angelica.mixins.interfaces.FontRendererExpansion;
+import jss.notfine.config.MCPatcherForgeConfig;
+import jss.notfine.util.FontRendererExpansion;
 
 public class FontUtils {
 
     private static final MCLogger logger = MCLogger.getLogger(MCLogger.Category.EXTENDED_HD);
 
-    private static final boolean enable = MCPatcherForgeConfig.instance().hdFont;
-    private static final boolean enableNonHD = MCPatcherForgeConfig.instance().nonHDFontWidth;
+    private static final boolean enable = MCPatcherForgeConfig.ExtendedHD.hdFont;
+    private static final boolean enableNonHD = MCPatcherForgeConfig.ExtendedHD.nonHDFontWidth;
 
     private static final int ROWS = 16;
     private static final int COLS = 16;
@@ -267,7 +267,7 @@ public class FontUtils {
                         charWidthf[ch] = width;
                         isOverride[ch] = true;
                     }
-                } catch (NumberFormatException e) {}
+                } catch (NumberFormatException ignore) {}
             }
         }
     }

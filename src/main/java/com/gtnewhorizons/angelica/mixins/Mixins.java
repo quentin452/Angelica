@@ -2,9 +2,11 @@ package com.gtnewhorizons.angelica.mixins;
 
 import com.gtnewhorizons.angelica.AngelicaMod;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
+import com.gtnewhorizons.angelica.config.CompatConfig;
 import com.gtnewhorizons.angelica.loading.AngelicaTweaker;
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
+import jss.notfine.config.NotFineConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +20,6 @@ public enum Mixins {
     ANGELICA_STARTUP(new Builder("Angelica Startup").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).addMixinClasses(
              "angelica.startup.MixinInitGLStateManager"
-            ,"angelica.startup.MixinSplashProgress"
         )
     ),
 
@@ -26,8 +27,12 @@ public enum Mixins {
         .setPhase(Phase.EARLY).addMixinClasses(
              "angelica.MixinActiveRenderInfo"
             ,"angelica.MixinEntityRenderer"
+            ,"angelica.MixinGameSettings"
             ,"angelica.MixinMinecraft"
+            ,"angelica.MixinMinecraftServer"
             ,"angelica.optimizations.MixinRendererLivingEntity"
+            ,"angelica.MixinFMLClientHandler"
+            ,"angelica.bugfixes.MixinRenderGlobal_DestroyBlock"
         )
     ),
     ANGELICA_VBO(
@@ -53,6 +58,30 @@ public enum Mixins {
             ,"angelica.debug.MixinTextureManager"
         )
     ),
+    ANGELICA_DYNAMIC_LIGHTS(new Builder("Angelica Dynamic Lights").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
+        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableDynamicLights).addMixinClasses(
+            "angelica.dynamiclights.MixinEntityRenderer"
+            ,"angelica.dynamiclights.MixinEntity"
+            ,"angelica.dynamiclights.MixinWorld"
+            ,"angelica.dynamiclights.MixinItemRenderer"
+        )
+    ),
+
+    ANGELICA_FIX_FLUID_RENDERER_CHECKING_BLOCK_AGAIN(
+        new Builder("Fix RenderBlockFluid reading the block type from the world access multiple times")
+            .setPhase(Phase.EARLY).addMixinClasses("angelica.bugfixes.MixinRenderBlockFluid").setSide(Side.BOTH)
+            .setApplyIf(() -> AngelicaConfig.fixFluidRendererCheckingBlockAgain)
+            .addTargetedMod(TargetedMod.VANILLA)),
+
+    ANGELICA_LIMIT_DROPPED_ITEM_ENTITIES(new Builder("Dynamically modifies the render distance of dropped items entities to preserve performance")
+        .setPhase(Phase.EARLY).addMixinClasses("angelica.optimizations.MixinRenderGlobal_ItemRenderDist").setSide(Side.CLIENT)
+        .setApplyIf(() -> AngelicaConfig.dynamicItemRenderDistance)
+        .addTargetedMod(TargetedMod.VANILLA)),
+
+    ANGELICA_ITEM_DISPLAY_LIST_OPTIMIZATION(new Builder("Optimized item rendering by wrapping them with display lists")
+        .setPhase(Phase.EARLY).addMixinClasses("angelica.itemrenderer.MixinItemRenderer").setSide(Side.CLIENT)
+        .setApplyIf(() -> AngelicaConfig.optimizeInWorldItemRendering)
+        .addTargetedMod(TargetedMod.VANILLA)),
 
     // Not compatible with the lwjgl debug callbacks, so disable if that's enabled
     ARCHAIC_SPLASH(new Builder("ArchaicFix Splash").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
@@ -85,19 +114,20 @@ public enum Mixins {
 
     SODIUM(new Builder("Sodium").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableSodium).addMixinClasses(
-             "sodium.MixinChunkProviderClient"
-            ,"sodium.MixinBlock"
+             "sodium.MixinBlock"
+            ,"sodium.MixinBlockFluidBase"
             ,"sodium.AccessorBiomeColorEvent"
             ,"sodium.MixinBiomeGenBase"
             ,"sodium.MixinChunk"
-            // disabled due to tps lags
-           // ,"sodium.MixinChunkProviderServer"
+            ,"sodium.MixinChunkProviderServer"
             ,"sodium.MixinClientRegistry"
-            ,"sodium.MixinEntity"
+            ,"sodium.MixinEntity_RenderDist"
+            ,"sodium.MixinEntityItem_RenderDist"
             ,"sodium.MixinRenderManager"
             ,"sodium.MixinExtendedBlockStorage"
             ,"sodium.MixinEntityRenderer"
             ,"sodium.MixinFMLClientHandler"
+            ,"sodium.MixinForgeHooksClient"
             ,"sodium.MixinGameSettings"
             ,"sodium.MixinFrustrum"
             ,"sodium.MixinMaterial"
@@ -106,48 +136,39 @@ public enum Mixins {
             ,"sodium.MixinRenderBlocks"
             ,"sodium.MixinRenderGlobal"
             ,"sodium.MixinWorldClient"
-            ,"sodium.MixinTessellator"
-            ,"sodium.MixinGuiIngameForge"
+            ,"sodium.MixinTileEntity"
             ,"sodium.MixinEffectRenderer"
             ,"sodium.MixinTileEntityRendererDispatcher"
             ,"sodium.MixinLongHashMap"
-            ,"sodium.MixinRender"
             ,"sodium.MixinRenderingRegistry"
+            ,"sodium.MixinPlayerManager"
         )
     ),
-
-    SODIUM_DYN_SURROUND(new Builder("Sodium without Dynamic Surroundings").addTargetedMod(TargetedMod.VANILLA)
-        .addExcludedMod(TargetedMod.DYNAMIC_SURROUNDINGS_MIST).addExcludedMod(TargetedMod.DYNAMIC_SURROUNDINGS_ORIGINAL).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableSodium).addMixinClasses(
-            "sodium.MixinEntityRenderer$WeatherQuality"
-        )
-    ),
-
-    // Required for Sodium's FluidRenderer, so it treats vanilla liquids as IFluidBlocks
-    SODIUM_WISHLIST(new Builder("Sodiumer").addTargetedMod(TargetedMod.VANILLA).setSide(Side.BOTH)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableSodiumFluidRendering).addMixinClasses(
-        "sodium.MixinBlockLiquid")),
 
     IRIS_RENDERING(new Builder("Iris Shaders").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableIris).addMixinClasses(
              "shaders.MixinEntityRenderer"
+            ,"shaders.MixinGuiIngameForge"
             ,"shaders.MixinFramebuffer"
             ,"shaders.MixinItem"
+            ,"shaders.MixinItemRenderer"
             ,"shaders.MixinLocale"
             ,"shaders.MixinOpenGlHelper"
             ,"shaders.MixinRender"
+            ,"shaders.MixinRendererLivingEntity"
             ,"shaders.MixinRenderGlobal"
+            ,"shaders.MixinTileEntityBeaconRenderer"
         )
     ),
 
     IRIS_ACCESSORS(new Builder("Iris Accessors").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableIris).addMixinClasses(
-             "shaders.accessors.MinecraftAccessor"
-            ,"shaders.accessors.EntityRendererAccessor"
-            ,"shaders.accessors.SimpleTextureAccessor"
-            ,"shaders.accessors.TextureAtlasSpriteAccessor"
-            ,"shaders.accessors.TextureMapAccessor"
-            ,"shaders.accessors.AnimationMetadataSectionAccessor"
+             "shaders.accessors.MixinMinecraft"
+            ,"shaders.accessors.MixinEntityRenderer"
+            ,"shaders.accessors.MixinSimpleTexture"
+            ,"shaders.accessors.MixinTextureAtlasSprite"
+            ,"shaders.accessors.MixinTextureMap"
+            ,"shaders.accessors.MixinAnimationMetadataSection"
         )
     ),
 
@@ -157,11 +178,20 @@ public enum Mixins {
             ,"angelica.textures.MixinTextureUtil"
         )),
 
+    ANGELICA_ZOOM(new Builder("Zoom").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
+        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableZoom)
+        .addMixinClasses(
+            "angelica.zoom.MixinEntityRenderer_Zoom",
+            "angelica.zoom.MixinMinecraft_Zoom",
+            "angelica.zoom.MixinMouseFilter"
+        )),
+
     HUD_CACHING(new Builder("Renders the HUD elements 20 times per second maximum to improve performance")
         .addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT).setPhase(Phase.EARLY)
         .setApplyIf(() -> AngelicaConfig.enableHudCaching).addMixinClasses(
-        	"angelica.hudcaching.GuiIngameAccessor",
-        	"angelica.hudcaching.GuiIngameForgeAccessor",
+        	"angelica.hudcaching.MixinGuiIngame",
+        	"angelica.hudcaching.MixinGuiIngameForge",
+            "angelica.hudcaching.MixinRenderGameOverlayEvent",
             "angelica.hudcaching.MixinEntityRenderer_HUDCaching",
             "angelica.hudcaching.MixinFramebuffer_HUDCaching",
             "angelica.hudcaching.MixinGuiIngame_HUDCaching",
@@ -188,6 +218,19 @@ public enum Mixins {
             "angelica.animation.MixinWorldRenderer",
             "angelica.animation.MixinRenderItem")),
 
+    EXTRA_UTILITIES_THREAD_SAFETY(new Builder("Enable thread safety fixes in Extra Utilities").setPhase(Phase.LATE)
+        .addTargetedMod(TargetedMod.EXTRAUTILS).setSide(Side.CLIENT)
+        .setApplyIf(() -> CompatConfig.fixExtraUtils)
+        .addMixinClasses(
+            "client.extrautils.MixinRenderBlockConnectedTextures",
+            "client.extrautils.MixinRenderBlockConnectedTexturesEthereal",
+            "client.extrautils.MixinIconConnectedTexture")),
+
+    MFR_THREAD_SAFETY(new Builder("Enable thread safety fixes for MineFactory Reloaded").setPhase(Phase.LATE)
+            .addTargetedMod(TargetedMod.MINEFACTORY_RELOADED).setSide(Side.CLIENT)
+            .setApplyIf(() -> CompatConfig.fixMinefactoryReloaded)
+            .addMixinClasses("client.minefactoryreloaded.MixinRedNetCableRenderer")),
+
     SPEEDUP_CAMPFIRE_BACKPORT_ANIMATIONS(new Builder("Add animation speedup support to Campfire Backport").setPhase(Phase.LATE)
             .addTargetedMod(TargetedMod.CAMPFIRE_BACKPORT).setSide(Side.CLIENT)
             .setApplyIf(() -> AngelicaConfig.speedupAnimations)
@@ -201,109 +244,157 @@ public enum Mixins {
         .addMixinClasses("angelica.textures.MixinTextureUtil_OptimizeMipmap").addTargetedMod(TargetedMod.VANILLA)
         .setApplyIf(() -> AngelicaConfig.optimizeTextureLoading).setSide(Side.CLIENT)),
 
-    NOTFINE_OPTIMIZATION(new Builder("NotFine Optimizations").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineOptimizations).addMixinClasses(
-             "notfine.faceculling.MixinBlock"
-            ,"notfine.faceculling.MixinBlockSlab"
-            ,"notfine.faceculling.MixinBlockSnow"
-            ,"notfine.faceculling.MixinBlockStairs"
-        )),
+    //From NotFine
+    NOTFINE_BASE_MOD(new Builder("NotFine")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addMixinClasses(addPrefix("notfine.",
+            "clouds.MixinEntityRenderer",
+            "clouds.MixinGameSettings",
+            //"clouds.MixinRenderGlobal",
+            "clouds.MixinWorldType",
 
-    NOTFINE_FEATURES(new Builder("NotFine Features").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures).addMixinClasses(
-             //"notfine.clouds.MixinEntityRenderer"
-            //,"notfine.clouds.MixinGameSettings"
-            //,"notfine.clouds.MixinRenderGlobal"
-            //,"notfine.clouds.MixinWorldType"
-            "notfine.glint.MixinRenderBiped"
-            ,"notfine.glint.MixinRenderItem"
-            ,"notfine.glint.MixinRenderPlayer"
-            ,"notfine.gui.MixinGuiSlot"
-            ,"notfine.leaves.MixinBlockLeaves"
-            ,"notfine.leaves.MixinBlockLeavesBase"
-            //,"notfine.particles.MixinBlockEnchantmentTable"
-            //,"notfine.particles.MixinEffectRenderer"
-            //,"notfine.particles.MixinWorldClient"
-            //,"notfine.particles.MixinWorldProvider"
-            ,"notfine.renderer.MixinRenderGlobal"
-            ,"notfine.settings.MixinGameSettings"
-            //,"notfine.toggle.MixinGuiIngame"
-            //,"notfine.toggle.MixinEntityRenderer"
-            //,"notfine.toggle.MixinRender" --> No Sodium below
-            //,"notfine.toggle.MixinRenderItem"
-        )),
+            "fix.MixinRenderItem",
 
-    NOTFINE_FEATURES_NO_SODIUM(new Builder("NotFine Features").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures && !AngelicaConfig.enableSodium).addMixinClasses(
-            "notfine.toggle.MixinRender"
-        )),
+            "gui.MixinGuiSlot",
 
-    NOTFINE_FEATURES_NO_MCPF_CIT(new Builder("NotFine Features which clash with mcpf cit (compat handled in MCPF_NF mixin)").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures &&
-            !(AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().customItemTexturesEnabled)
-        ).addMixinClasses(
-            "notfine.glint.MixinItemRenderer",
-            "notfine.glint.MixinRenderItemGlint"
-        )),
+            "glint.MixinRenderBiped",
+            "glint.MixinRenderPlayer",
 
-    NOTFINE_LATE_TWILIGHT_FOREST_LEAVES(new Builder("NotFine Mod Leaves").addTargetedMod(TargetedMod.TWILIGHT_FOREST).setSide(Side.CLIENT)
-        .setPhase(Phase.LATE).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures).addMixinClasses(
-             "notfine.leaves.twilightforest.MixinBlockTFLeaves"
-            ,"notfine.leaves.twilightforest.MixinBlockTFLeaves3"
+            "optimization.MixinRenderItemFrame",
+
+            "leaves.MixinBlockLeaves",
+            "leaves.MixinBlockLeavesBase",
+
+            "particles.MixinBlockEnchantmentTable",
+            "particles.MixinEffectRenderer",
+            "particles.MixinWorldClient",
+
+            "renderer.MixinRenderGlobal",
+
+            "toggle.MixinEntityRenderer",
+            "toggle.MixinGuiIngame",
+            "toggle.MixinRender",
+            "toggle.MixinRenderItem",
+
+            "interpolatedtexturemap.MixinTextureMap"
+        ))
+    ),
+    BETTER_FACE_CULLING(new Builder("Better face culling")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> NotFineConfig.betterBlockFaceCulling)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addMixinClasses(addPrefix("notfine.faceculling.",
+            "MixinBlock",
+            "MixinBlockCactus",
+            "MixinBlockCarpet",
+            "MixinBlockEnchantmentTable",
+            "MixinBlockFarmland",
+            "MixinBlockSlab",
+            "MixinBlockSnow",
+            "MixinBlockStairs",
+            "MixinRenderBlocks"
+        ))
+    ),
+    NOTFINE_NO_DYNAMIC_SURROUNDINGS(new Builder("NotFine no Dynamic Surroundings")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> true)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addExcludedMod(TargetedMod.DYNAMIC_SURROUNDINGS_MIST)
+        .addExcludedMod(TargetedMod.DYNAMIC_SURROUNDINGS_ORIGINAL)
+        .addMixinClasses("notfine.toggle.MixinEntityRenderer$RenderRainSnow")
+    ),
+    NOTFINE_NO_CUSTOM_ITEM_TEXTURES(new Builder("NotFine no Custom Item Textures")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> !AngelicaConfig.enableMCPatcherForgeFeatures || !MCPatcherForgeConfig.CustomItemTextures.enabled)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addMixinClasses(addPrefix("notfine.glint.",
+            "MixinItemRenderer",
+            "MixinRenderItem"
+        ))
+    ),
+    NOTFINE_NATURA(new Builder("NotFine Natura compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.NATURA)
+        .addMixinClasses(addPrefix("notfine.leaves.natura.",
+            "MixinBerryBush",
+            "MixinNetherBerryBush"
+        ))
+    ),
+    NOTFINE_THAUMCRAFT(new Builder("NotFine Thaumcraft compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.THAUMCRAFT)
+        .addMixinClasses("notfine.leaves.thaumcraft.MixinBlockMagicalLeaves")
+    ),
+    THAUMCRAFT_BETTER_FACE_CULLING(new Builder("Better face culling Thaumcraft compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> NotFineConfig.betterBlockFaceCulling)
+        .addTargetedMod(TargetedMod.THAUMCRAFT)
+        .addMixinClasses(addPrefix("notfine.faceculling.thaumcraft.",
+            "MixinBlockWoodenDevice",
+            "MixinBlockStoneDevice",
+            "MixinBlockTable"
+        ))
+    ),
+    NOTFINE_TINKERS_CONSTRUCT(new Builder("NotFine Tinker's Construct compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.TINKERS_CONSTRUCT)
+        .addMixinClasses("notfine.leaves.tconstruct.MixinOreberryBush")
+    ),
+    NOTFINE_WITCHERY(new Builder("NotFine Witchery compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.WITCHERY)
+        .addMixinClasses("notfine.leaves.witchery.MixinBlockWitchLeaves")
+    ),
+    NOTFINE_TWILIGHT_FOREST(new Builder("NotFine Twilight Forest compat")
+        .setSide(Side.CLIENT).setPhase(Phase.LATE)
+        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
+        .addTargetedMod(TargetedMod.TWILIGHT_FOREST)
+        .addMixinClasses(addPrefix("notfine.leaves.twilightforest.",
+            "MixinBlockTFLeaves",
+            "MixinBlockTFLeaves3",
             // TODO: Verify 2.3.8.18 or later to support non NH builds?
-            ,"notfine.leaves.twilightforest.MixinBlockTFMagicLeaves"
-        )),
-    NOTFINE_LATE_THAUMCRAFT_LEAVES(new Builder("NotFine Mod Leaves").addTargetedMod(TargetedMod.THAUMCRAFT).setSide(Side.CLIENT)
-        .setPhase(Phase.LATE).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures).addMixinClasses(
-             "notfine.leaves.thaumcraft.MixinBlockMagicalLeaves"
-        )),
-    NOTFINE_LATE_WITCHERY_LEAVES(new Builder("NotFine Mod Leaves").addTargetedMod(TargetedMod.WITCHERY).setSide(Side.CLIENT)
-        .setPhase(Phase.LATE).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures).addMixinClasses(
-             "notfine.leaves.witchery.MixinBlockWitchLeaves"
-        )),
-
-    MCPATCHERFORGE_NOTFINE_COMPAT(new Builder("Notfine features and MCPF features where the 2 would clash").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableNotFineFeatures &&
-            AngelicaConfig.enableMCPatcherForgeFeatures &&
-            MCPatcherForgeConfig.instance().customItemTexturesEnabled)
-        .addMixinClasses(addPrefix(
-            "notfine_mcpf_compat.",
-            "MixinRenderItem",
-            "MixinItemRenderer"))),
-
-    MCPATCHERFORGE_BASE_MOD(new Builder("Base MCPatcher mixins").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
+            "MixinBlockTFMagicLeaves"
+        ))
+    ),
+    MCPATCHER_FORGE(new Builder("MCPatcher Forge")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
         .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(addPrefix(
-            "mcpatcherforge.",
+        .addMixinClasses(addPrefix("mcpatcherforge.",
             "base.MixinBlockGrass",
-                "base.MixinBlockMycelium",
+            "base.MixinBlockMycelium",
 
-                "base.MixinAbstractTexture",
-                "base.MixinTextureAtlasSprite",
+            "base.MixinAbstractTexture",
+            "base.MixinTextureAtlasSprite",
 
-                "base.MixinSimpleReloadableResourceManager",
+            "base.MixinSimpleReloadableResourceManager",
 
-                "base.MixinMinecraft"
-
-                // TODO merge renderpass changes into Sodium renderer
-                // "renderpass.MixinEntityRenderer",
-                // "renderpass.MixinRenderBlocks",
-                // "renderpass.MixinRenderGlobal",
-                // "renderpass.MixinWorldRenderer"
-
-                         )
-        )),
-
-    MCPATCHERFORGE_CUSTOM_COLOURS(new Builder("Custom colors").setSide(Mixins.Side.CLIENT)
-        .setPhase(Mixins.Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().customColorsEnabled)
+            "base.MixinMinecraft"
+        ))
+    ),
+    MCPATCHER_FORGE_RENDERPASS(new Builder("MCPatcher Forge Renderpass")
+        .setPhase(Phase.EARLY)
+        .setApplyIf(() -> NotFineConfig.renderPass)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(
-        addPrefix(
-        "mcpatcherforge.cc.",
-             "block.material.MixinMapColor",
+        .addMixinClasses(addPrefix("mcpatcherforge.",
+            "renderpass.MixinEntityRenderer",
+            "renderpass.MixinRenderBlocks",
+            "renderpass.MixinRenderGlobal",
+            "renderpass.MixinWorldRenderer"
+        ))
+    ),
+    MCPATCHER_FORGE_CUSTOM_COLORS(new Builder("MCP:F Custom Colors")
+        .setSide(Mixins.Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.CustomColors.enabled)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addMixinClasses(addPrefix("mcpatcherforge.cc.",
+            "block.material.MixinMapColor",
 
             "block.MixinBlock",
             "block.MixinBlockDoublePlant",
@@ -351,55 +442,56 @@ public enum Mixins {
             "world.MixinWorld",
             "world.MixinWorldProvider",
             "world.MixinWorldProviderEnd",
-            "world.MixinWorldProviderHell"))),
-
-    MCPATCHERFORGE_CUSTOM_ITEM_TEXTURES(new Mixins.Builder("Custom Item Textures").setSide(Mixins.Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().customItemTexturesEnabled)
+            "world.MixinWorldProviderHell"
+        ))
+    ),
+    MCPATCHER_FORGE_CUSTOM_ITEM_TEXTURES(new Builder("MCP:F Custom Item Textures")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.CustomItemTextures.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(
-        addPrefix(
-        "mcpatcherforge.cit.",
+        .addMixinClasses(addPrefix("mcpatcherforge.cit.",
             "client.renderer.entity.MixinRenderBiped",
             "client.renderer.entity.MixinRenderEntityLiving",
             "client.renderer.entity.MixinRenderItem",
             "client.renderer.entity.MixinRenderPlayer",
             "client.renderer.entity.MixinRenderSnowball",
             "client.renderer.MixinItemRenderer",
+            "client.renderer.MixinRenderGlobal",
+            "entity.MixinEntityLivingBase",
             "item.MixinItem",
             "nbt.MixinNBTTagCompound",
-            "nbt.MixinNBTTagList"))),
-
-    MCPATCHERFORGE_CUSTOM_ITEM_TEXTURES_NO_NF(new Mixins.Builder("Custom Item Textures without notfine features").setSide(Mixins.Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(() -> (AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().customItemTexturesEnabled) && !AngelicaConfig.enableNotFineFeatures)
+            "nbt.MixinNBTTagList",
+            "world.MixinWorld"
+        ))
+    ),
+    MCPATCHER_FORGE_CONNECTED_TEXTURES(new Builder("MCP:F Connected Textures")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.ConnectedTextures.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(addPrefix(
-             "mcpatcherforge.cit.client.renderer.",
-            "entity.MixinRenderItemRenderDroppedItem",
-            "MixinItemRenderer_NO_NF"
-                ))),
-
-    MCPATCHERFORGE_CONNECTED_TEXTURES(new Builder("Connected Textures").setSide(Side.CLIENT)
-        .setPhase(Mixins.Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().connectedTexturesEnabled)
+        .addMixinClasses("mcpatcherforge.ctm.MixinRenderBlocks")
+    ),
+    MCPATCHER_FORGE_EXTENDED_HD(new Builder("MCP:F Extended hd")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.ExtendedHD.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses("mcpatcherforge.ctm.MixinRenderBlocks")),
-
-    MCPATCHERFORGE_EXTENDED_HD(new Builder("Extended hd").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().extendedHDEnabled)
+        .addMixinClasses(addPrefix("mcpatcherforge.hd.",
+            "MixinTextureClock",
+            "MixinTextureCompass",
+            "MixinTextureManager"
+        ))
+    ),
+    MCPATCHER_FORGE_EXTENDED_HD_FONT(new Builder("MCP:F Extended HD Font")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> (AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.ExtendedHD.enabled && MCPatcherForgeConfig.ExtendedHD.hdFont))
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(
-        addPrefix("mcpatcherforge.hd.", "MixinFontRenderer", "MixinTextureClock", "MixinTextureCompass", "MixinTextureManager"))),
-
-    MCPATCHERFORGE_RANDOM_MOBS(new Builder("Random Mobs").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().randomMobsEnabled)
+        .addExcludedMod(TargetedMod.COFHCORE)
+        .addMixinClasses("mcpatcherforge.hd.MixinFontRenderer")
+    ),
+    MCPATCHER_FORGE_RANDOM_MOBS(new Builder("MCP:F Random Mobs")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.RandomMobs.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(
-        addPrefix(
-        "mcpatcherforge.mob.",
+        .addMixinClasses(addPrefix("mcpatcherforge.mob.",
             "MixinRender",
             "MixinRenderEnderman",
             "MixinRenderFish",
@@ -409,50 +501,60 @@ public enum Mixins {
             "MixinRenderSnowMan",
             "MixinRenderSpider",
             "MixinRenderWolf",
-            "MixinEntityLivingBase"))),
-
-    MCPATCHERFORGE_SKY(new Builder("Sky").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.instance().betterSkiesEnabled)
+            "MixinEntityLivingBase"
+        ))
+    ),
+    MCPATCHER_FORGE_SKY(new Builder("MCP:F Sky")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures && MCPatcherForgeConfig.BetterSkies.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses(addPrefix("mcpatcherforge.sky.", "MixinEffectRenderer", "MixinRenderGlobal"
-        ))),
-
-    MCPATCHERFORGE_CC_NO_CTM(new Builder("Custom colors, no connected textures").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(
-            () -> AngelicaConfig.enableMCPatcherForgeFeatures
-                && (!MCPatcherForgeConfig.instance().connectedTexturesEnabled
-                && MCPatcherForgeConfig.instance().customColorsEnabled))
+        .addMixinClasses(addPrefix("mcpatcherforge.sky.",
+            "MixinEffectRenderer",
+            "MixinRenderGlobal"
+        ))
+    ),
+    MCPATCHER_FORGE_CC_NO_CTM(new Builder("MCP:F Custom Colors, no Connected Textures")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures
+            && !MCPatcherForgeConfig.ConnectedTextures.enabled
+            && MCPatcherForgeConfig.CustomColors.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses("mcpatcherforge.ctm_cc.MixinRenderBlocksNoCTM")),
-
-    MCPATCHERFORGE_CTM_AND_CC(new Builder("Connected textures and Custom Colors enabled").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(
-            () -> AngelicaConfig.enableMCPatcherForgeFeatures
-                && MCPatcherForgeConfig.instance().connectedTexturesEnabled
-                && MCPatcherForgeConfig.instance().customColorsEnabled)
+        .addMixinClasses("mcpatcherforge.cc_ctm.MixinRenderBlocksNoCTM")
+    ),
+    MCPATCHER_FORGE_CTM_NO_CC(new Builder("MCP:F Connected Textures, no Custom Colours")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures
+            && MCPatcherForgeConfig.ConnectedTextures.enabled
+            && !MCPatcherForgeConfig.CustomColors.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses("mcpatcherforge.ctm_cc.MixinRenderBlocks")),
-
-    MCPATCHERFORGE_CTM_NO_CC(new Builder("Connected textures, no custom colours").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(
-            () -> AngelicaConfig.enableMCPatcherForgeFeatures
-                && (MCPatcherForgeConfig.instance().connectedTexturesEnabled
-                && !MCPatcherForgeConfig.instance().customColorsEnabled))
+        .addMixinClasses("mcpatcherforge.ctm_cc.MixinRenderBlocksNoCC")
+    ),
+    MCPATCHER_FORGE_CTM_AND_CC(new Builder("MCP:F Connected Textures and Custom Colors")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures
+            && MCPatcherForgeConfig.ConnectedTextures.enabled
+            && MCPatcherForgeConfig.CustomColors.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses("mcpatcherforge.ctm_cc.MixinRenderBlocksNoCC")),
-
-    MCPATCHERFORGE_CTM_OR_CC(new Builder("Connected textures or Custom Colors enabled").setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY)
-        .setApplyIf(
-            () -> AngelicaConfig.enableMCPatcherForgeFeatures
-                && (MCPatcherForgeConfig.instance().connectedTexturesEnabled
-                || MCPatcherForgeConfig.instance().customColorsEnabled))
+        .addMixinClasses("mcpatcherforge.ctm_cc.MixinRenderBlocks")
+    ),
+    MCPATCHER_FORGE_CTM_OR_CC(new Builder("MCP:F Connected Textures or Custom Colors")
+        .setSide(Side.CLIENT).setPhase(Phase.EARLY)
+        .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures
+            && MCPatcherForgeConfig.ConnectedTextures.enabled
+            || MCPatcherForgeConfig.CustomColors.enabled)
         .addTargetedMod(TargetedMod.VANILLA)
-        .addMixinClasses("mcpatcherforge.ctm_cc.MixinTextureMap")),
+        .addMixinClasses("mcpatcherforge.ctm_cc.MixinTextureMap")
+    ),
+    //End from NotFine
+
+    QPR(new Builder("Adds a QuadProvider field to blocks without populating it")
+        .setSide(Side.CLIENT)
+        .setPhase(Phase.EARLY)
+        .setApplyIf(() -> true)
+        .addTargetedMod(TargetedMod.VANILLA)
+        .addMixinClasses(
+            "angelica.models.MixinBlock",
+            "angelica.models.MixinBlockOldLeaf")),
 
     ;
 
@@ -479,6 +581,11 @@ public enum Mixins {
     }
 
     public static List<String> getEarlyMixins(Set<String> loadedCoreMods) {
+        NotFineConfig.loadSettings();
+        //This may be possible to handle differently or fix.
+        if(loadedCoreMods.contains("cofh.asm.LoadingPlugin")) {
+            MCPatcherForgeConfig.ExtendedHD.hdFont = false;
+        }
         final List<String> mixins = new ArrayList<>();
         final List<String> notLoading = new ArrayList<>();
         for (Mixins mixin : Mixins.values()) {

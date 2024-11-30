@@ -14,14 +14,14 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void preInit(FMLPreInitializationEvent event) {
-        if(event.getSide() == Side.CLIENT) {
-            GameSettings.Options.FRAMERATE_LIMIT.valueStep = 1f;
-        }
-        NotFineConfig config = new NotFineConfig();
-        config.loadSettings();
-
         if(!NotFineConfig.allowAdvancedOpenGL) {
             Minecraft.getMinecraft().gameSettings.advancedOpengl = false;
+        }
+        if(!NotFineConfig.allowToggle3DAnaglyph) {
+            Minecraft.getMinecraft().gameSettings.anaglyph = false;
+        }
+        if(!NotFineConfig.allowToggleFBO) {
+            Minecraft.getMinecraft().gameSettings.fboEnable = true;
         }
 
         for(Settings setting : Settings.values()) {
@@ -30,15 +30,11 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void init(FMLInitializationEvent event) {
-        // Nothing to do here (yet)
-    }
+    public void init(FMLInitializationEvent event) { }
 
     @Override
     public void postInit(FMLPostInitializationEvent event) {
-        if(event.getSide() == Side.CLIENT) {
-            SettingsManager.settingsFile.loadSettings();
-        }
+        SettingsManager.settingsFile.loadSettings();
     }
 
 }

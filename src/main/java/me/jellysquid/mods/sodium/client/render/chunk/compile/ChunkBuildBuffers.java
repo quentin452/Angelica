@@ -1,12 +1,12 @@
 package me.jellysquid.mods.sodium.client.render.chunk.compile;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFacing;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Getter;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.buffer.VertexData;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferBuilder;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.BakedChunkModelBuffers;
@@ -42,8 +42,6 @@ public class ChunkBuildBuffers implements ChunkBuildBuffersExt {
 
     private BlockContextHolder iris$contextHolder;
 
-    private static final int EXPECTED_BUFFER_SIZE = 2097152;
-
     public ChunkBuildBuffers(ChunkVertexType vertexType) {
         this.vertexType = vertexType;
 
@@ -58,7 +56,7 @@ public class ChunkBuildBuffers implements ChunkBuildBuffersExt {
             final VertexBufferBuilder[] buffers = this.buffersByLayer[passId];
 
             for (ModelQuadFacing facing : ModelQuadFacing.VALUES) {
-                buffers[facing.ordinal()] = new VertexBufferBuilder(vertexType.getBufferVertexFormat(), EXPECTED_BUFFER_SIZE / ModelQuadFacing.COUNT);
+                buffers[facing.ordinal()] = new VertexBufferBuilder(vertexType.getBufferVertexFormat(), pass.bufferSize() / ModelQuadFacing.COUNT);
             }
         }
 

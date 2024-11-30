@@ -4,6 +4,7 @@ import com.gtnewhorizons.angelica.compat.mojang.Camera;
 import com.gtnewhorizons.angelica.compat.mojang.ChunkPos;
 import com.gtnewhorizons.angelica.compat.toremove.MatrixStack;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
+import com.gtnewhorizons.angelica.rendering.AngelicaRenderQueue;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -31,11 +32,11 @@ import me.jellysquid.mods.sodium.client.render.chunk.lists.ChunkRenderListIterat
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListener;
-import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 import me.jellysquid.mods.sodium.common.util.IdTable;
 import me.jellysquid.mods.sodium.common.util.collections.FutureDequeDrain;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -45,7 +46,6 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkStatusListener {
     /**
@@ -97,7 +97,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     @Getter
     private int submitted;
-    private int totalSubmitted;
 
     private final boolean translucencySorting;
 
@@ -125,9 +124,15 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     private static final ObjectArrayFIFOQueue<?> EMPTY_QUEUE = new ObjectArrayFIFOQueue<>();
 
+    private static final ThreadLocal<BlockRenderPass> threadLocalRenderPass = ThreadLocal.withInitial(() -> BlockRenderPass.CUTOUT_MIPPED);
+    public static int getWorldRenderPass() {
+        return threadLocalRenderPass.get().ordinal();
+    }
+    public static void setWorldRenderPass(BlockRenderPass pass) {
+        threadLocalRenderPass.set(pass);
+    }
 
-
-    public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, WorldClient world, int renderDistance) throws ExecutionException, InterruptedException {
+    public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, WorldClient world, int renderDistance) {
         this.backend = backend;
         this.renderer = renderer;
         this.world = world;
@@ -453,7 +458,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void connectNeighborColumns(ChunkRenderColumn<T> column) {
-        for (ForgeDirection dir : DirectionUtil.ALL_DIRECTIONS) {
+        for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
             ChunkRenderColumn<T> adj = this.getAdjacentColumn(column, dir);
 
             if (adj != null) {
@@ -465,7 +470,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void disconnectNeighborColumns(ChunkRenderColumn<T> column) {
-        for (ForgeDirection dir : DirectionUtil.ALL_DIRECTIONS) {
+        for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
             ChunkRenderColumn<T> adj = column.getAdjacentColumn(dir);
 
             if (adj != null) {
@@ -574,7 +579,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
             sortedAnything = true;
             submitted++;
         }
-        totalSubmitted += submitted;
+        WorldRenderer.chunksUpdated += submitted;
 
         this.dirty |= submitted > 0;
 
@@ -588,13 +593,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
             this.dirty = true;
             this.backend.upload(RenderDevice.INSTANCE.createCommandList(), this.builder.filterChunkBuilds(new FutureDequeDrain<>(futures)));
         }
-    }
-
-    public int getAndResetSubmitted() {
-        // Return how many chunks were submitted since the last call to this method
-        final int submitted = totalSubmitted;
-        totalSubmitted = 0;
-        return submitted;
     }
 
     public void markDirty() {
@@ -623,7 +621,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.builder.setCameraPosition(x, y, z);
     }
 
-    public void destroy() throws ExecutionException, InterruptedException {
+    public void destroy() {
         this.reset();
 
         for (ChunkRenderColumn<T> column : this.columns.values()) {
@@ -640,9 +638,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void scheduleRebuildOffThread(int x, int y, int z, boolean important) {
-        // TODO: Sodium Threads
-        throw new RuntimeException("scheduleRebuildOffThread");
-//        Minecraft.getMinecraft().submit(() -> this.scheduleRebuild(x, y, z, important));
+        AngelicaRenderQueue.executor().execute(() -> this.scheduleRebuild(x, y, z, important));
     }
 
     public void scheduleRebuild(int x, int y, int z, boolean important) {

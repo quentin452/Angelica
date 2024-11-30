@@ -1,5 +1,6 @@
 package com.gtnewhorizons.angelica.glsm.stacks;
 
+import com.gtnewhorizon.gtnhlib.client.renderer.stacks.IStateStack;
 import com.gtnewhorizons.angelica.glsm.GLStateManager;
 import com.gtnewhorizons.angelica.glsm.states.Color4;
 
@@ -14,6 +15,11 @@ public class Color4Stack extends Color4 implements IStateStack<Color4Stack> {
         for (int i = 0; i < GLStateManager.MAX_ATTRIB_STACK_DEPTH; i++) {
             stack[i] = new Color4();
         }
+    }
+
+    public Color4Stack(Color4 color4) {
+        this();
+        set(color4);
     }
 
     public Color4Stack push() {
@@ -34,4 +40,7 @@ public class Color4Stack extends Color4 implements IStateStack<Color4Stack> {
         return this;
     }
 
+    public boolean isEmpty() {
+        return pointer == 0;
+    }
 }

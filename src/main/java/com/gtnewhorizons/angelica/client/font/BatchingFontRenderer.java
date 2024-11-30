@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11.*;
-
 /**
  * A batching replacement for {@code FontRenderer}
  *
@@ -248,24 +246,23 @@ public class BatchingFontRenderer {
         batchCommands.sort(FontDrawCmd.DRAW_ORDER_COMPARATOR);
 
         final boolean isTextureEnabledBefore = GLStateManager.glIsEnabled(GL11.GL_TEXTURE_2D);
-        final int boundTextureBefore = GLStateManager.getBoundTexture();
+        final int boundTextureBefore = GLStateManager.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         boolean textureChanged = false;
 
         ResourceLocation lastTexture = DUMMY_RESOURCE_LOCATION;
         GLStateManager.enableTexture();
         GLStateManager.enableAlphaTest();
         GLStateManager.enableBlend();
-        GLStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-        GLStateManager.glShadeModel(GL_FLAT);
+        GLStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        GLStateManager.glShadeModel(GL11.GL_FLAT);
 
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
-        glTexCoordPointer(2, 0, batchVtxTexCoords);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glColorPointer(4, GL_UNSIGNED_BYTE, 0, batchVtxColors);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glVertexPointer(2, 0, batchVtxPositions);
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        GL11.glTexCoordPointer(2, 0, batchVtxTexCoords);
+        GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 0, batchVtxColors);
+        GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
+        GL11.glVertexPointer(2, 0, batchVtxPositions);
+        GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+        GLStateManager.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
         // Use plain for loop to avoid allocations
         final FontDrawCmd[] cmdsData = batchCommands.elements();
@@ -274,9 +271,9 @@ public class BatchingFontRenderer {
             final FontDrawCmd cmd = cmdsData[i];
             if (!Objects.equals(lastTexture, cmd.texture)) {
                 if (lastTexture == null) {
-                    GLStateManager.enableTexture();
+                    GLStateManager.glEnable(GL11.GL_TEXTURE_2D);
                 } else if (cmd.texture == null) {
-                    GLStateManager.disableTexture();
+                    GLStateManager.glDisable(GL11.GL_TEXTURE_2D);
                 }
                 if (cmd.texture != null) {
                     ((FontRendererAccessor) underlying).angelica$bindTexture(cmd.texture);
@@ -286,13 +283,15 @@ public class BatchingFontRenderer {
             }
             batchIndices.limit(cmd.startVtx + cmd.idxCount);
             batchIndices.position(cmd.startVtx);
-            glDrawElements(GL_TRIANGLES, batchIndices);
+            GL11.glDrawElements(GL11.GL_TRIANGLES, batchIndices);
         }
 
-        glPopClientAttrib();
+        GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
+        GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
 
         if (isTextureEnabledBefore) {
-        	GLStateManager.enableTexture();
+        	GLStateManager.glEnable(GL11.GL_TEXTURE_2D);
         }
         if (textureChanged) {
         	GLStateManager.glBindTexture(GL11.GL_TEXTURE_2D, boundTextureBefore);
@@ -358,7 +357,7 @@ public class BatchingFontRenderer {
             final float underlineY = anchorY + underlying.FONT_HEIGHT - 1.0f;
             float underlineStartX = 0.0f;
             float underlineEndX = 0.0f;
-            final float strikethroughY = anchorY + (float) (underlying.FONT_HEIGHT / 2);
+            final float strikethroughY = anchorY + (float) (underlying.FONT_HEIGHT / 2) - 1.0F;
             float strikethroughStartX = 0.0f;
             float strikethroughEndX = 0.0f;
 

@@ -22,15 +22,15 @@ import com.prupe.mcpatcher.mal.resource.PropertiesFile;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.resource.TexturePackChangeHandler;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
 
 public class SkyRenderer {
 
     private static final MCLogger logger = MCLogger.getLogger(MCLogger.Category.BETTER_SKIES);
 
-    private static final boolean enable = MCPatcherForgeConfig.instance().skybox;
-    private static final boolean unloadTextures = MCPatcherForgeConfig.instance().unloadTextures;
-    public static final double horizonHeight = MCPatcherForgeConfig.instance().horizon;
+    private static final boolean enable = MCPatcherForgeConfig.BetterSkies.skybox;
+    private static final boolean unloadTextures = MCPatcherForgeConfig.BetterSkies.unloadTextures;
+    public static final double horizonHeight = MCPatcherForgeConfig.BetterSkies.horizon;
 
     private static double worldTime;
     private static float celestialAngle;

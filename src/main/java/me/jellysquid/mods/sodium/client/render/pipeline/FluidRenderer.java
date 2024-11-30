@@ -1,24 +1,24 @@
 package me.jellysquid.mods.sodium.client.render.pipeline;
 
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.ModelQuad;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.ModelQuadView;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.ModelQuadViewMutable;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFacing;
+import com.gtnewhorizon.gtnhlib.client.renderer.quad.properties.ModelQuadFlags;
+import com.gtnewhorizon.gtnhlib.client.renderer.util.DirectionUtil;
+import com.gtnewhorizon.gtnhlib.client.renderer.util.WorldUtil;
 import com.gtnewhorizons.angelica.config.AngelicaConfig;
 import me.jellysquid.mods.sodium.client.model.light.LightMode;
 import me.jellysquid.mods.sodium.client.model.light.LightPipeline;
 import me.jellysquid.mods.sodium.client.model.light.LightPipelineProvider;
 import me.jellysquid.mods.sodium.client.model.light.data.QuadLightData;
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuad;
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuadViewMutable;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFlags;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
-import me.jellysquid.mods.sodium.common.util.DirectionUtil;
-import me.jellysquid.mods.sodium.common.util.WorldUtil;
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -27,7 +27,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.IFluidBlock;
 import org.joml.Vector3d;
 
 import java.util.Arrays;
@@ -38,13 +37,15 @@ public class FluidRenderer {
 	private static final float EPSILON = 0.001f;
     private final LightPipelineProvider lpp;
 
-    private final BlockPos.Mutable scratchPos = new BlockPos.Mutable();
+    private final BlockPos scratchPos = new BlockPos();
 
     private final ModelQuadViewMutable quad = new ModelQuad();
 
     private final QuadLightData quadLightData = new QuadLightData();
     private boolean useSeparateAo;
     private final int[] quadColors = new int[4];
+    private final int[] biomeColors = new int[4];
+    private final TextureAtlasSprite missingTex = Minecraft.getMinecraft().getTextureMapBlocks().getAtlasSprite("minecraft:missing");
 
     public FluidRenderer(LightPipelineProvider lpp) {
         int normal = Norm3b.pack(0.0f, 1.0f, 0.0f);
@@ -94,8 +95,9 @@ public class FluidRenderer {
         int posY = pos.y;
         int posZ = pos.z;
 
-        Fluid fluid = ((IFluidBlock) block).getFluid();
-        if(fluid == null) return false;
+
+        Fluid fluid = WorldUtil.getFluid(block);
+        if (fluid == null) return false;
 
         // Check for occluded sides; if everything is occluded, don't render
         boolean sfUp = this.isFluidOccluded(world, posX, posY, posZ, ForgeDirection.UP, fluid);
@@ -117,6 +119,11 @@ public class FluidRenderer {
             (TextureAtlasSprite) fluid.getFlowingIcon(),
             null
         };
+
+        // Because some mods are wack and return null textures here
+        sprites[0] = sprites[0] == null ? missingTex : sprites[0];
+        sprites[1] = sprites[1] == null ? missingTex : sprites[1];
+
         boolean hc = fluid.getColor() != 0xffffffff;
 
         boolean rendered = false;
@@ -162,7 +169,7 @@ public class FluidRenderer {
             } else {
                 sprite = sprites[1];
                 facing = ModelQuadFacing.UNASSIGNED;
-                float dir = (float) Math.atan2(velocity.z, velocity.x) - (1.5707964f);
+                float dir = (float) Math.atan2(velocity.z, velocity.x) - (((float)Math.PI / 2F));
                 float sin = MathHelper.sin(dir) * 0.25F;
                 float cos = MathHelper.cos(dir) * 0.25F;
                 u1 = sprite.getInterpolatedU(8.0F + (-cos - sin) * 16.0F);
@@ -353,16 +360,13 @@ public class FluidRenderer {
         QuadLightData light = this.quadLightData;
         lighter.calculate(quad, pos, light, null, dir, false);
 
-        int[] biomeColors = null;
-
         if (colorized) {
-            biomeColors = new int[4];
             int color = slice.getBlock(pos.x,pos.y,pos.z).colorMultiplier(slice,pos.x,pos.y,pos.z);
-            Arrays.fill(biomeColors,ColorARGB.toABGR(color));
+            Arrays.fill(this.biomeColors, ColorARGB.toABGR(color));
         }
 
         for (int i = 0; i < 4; i++) {
-            int color = biomeColors != null ? biomeColors[i] : 0xFFFFFFFF;
+            int color = colorized ? biomeColors[i] : 0xFFFFFFFF;
             final float ao = light.br[i] * brightness;
             if (useSeparateAo) {
                 color &= 0x00FFFFFF;
@@ -433,7 +437,7 @@ public class FluidRenderer {
 
             Block block = world.getBlock(x2, y + 1, z2);
 
-            if (block instanceof IFluidBlock && ((IFluidBlock) block).getFluid() == fluid) {
+            if (WorldUtil.getFluid(block) == fluid) {
                 return 1.0F;
             }
 
@@ -441,7 +445,7 @@ public class FluidRenderer {
 
             block = world.getBlock(pos.x, pos.y, pos.z);
             int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
-            Fluid fluid2 = block instanceof IFluidBlock ? ((IFluidBlock) world.getBlock(pos.x, pos.y, pos.z)).getFluid() : null;
+            Fluid fluid2 = WorldUtil.getFluid(block);
 
             if (fluid2 == fluid) {
                 float height = WorldUtil.getFluidHeight(fluid2, meta);

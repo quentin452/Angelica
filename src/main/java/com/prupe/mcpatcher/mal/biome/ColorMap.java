@@ -19,13 +19,13 @@ import com.prupe.mcpatcher.mal.resource.ResourceList;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.util.WeightedIndex;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
 
 abstract public class ColorMap implements IColorMap {
 
     private static final MCLogger logger = MCLogger.getLogger(MCLogger.Category.CUSTOM_COLORS);
 
-    public static final boolean useSwampColors = MCPatcherForgeConfig.instance().swampColors;
+    public static final boolean useSwampColors = MCPatcherForgeConfig.CustomColors.swampColors;
 
     private static final int FIXED = 0;
     private static final int TEMPERATURE_HUMIDITY = 1;
@@ -165,7 +165,7 @@ abstract public class ColorMap implements IColorMap {
         unusedPNGs.clear();
         defaultColorMapFormat = TEMPERATURE_HUMIDITY;
         defaultFlipY = false;
-        defaultYVariance = MCPatcherForgeConfig.instance().yVariance;
+        defaultYVariance = MCPatcherForgeConfig.CustomColors.yVariance;
     }
 
     public static void reloadColorMapSettings(PropertiesFile properties) {

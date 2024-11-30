@@ -49,47 +49,70 @@ configurations {
 }
 
 dependencies {
-    compileOnly("com.github.GTNewHorizons:Hodgepodge:2.4.4")
+    compileOnly("com.github.GTNewHorizons:Hodgepodge:2.5.78")
 
-    compileOnly("org.projectlombok:lombok:1.18.22") {transitive = false }
+    compileOnly("com.gtnewhorizons.retrofuturabootstrap:RetroFuturaBootstrap:0.4.0") { transitive = false }
+
+    compileOnly("org.projectlombok:lombok:1.18.22") { transitive = false }
     annotationProcessor("org.projectlombok:lombok:1.18.22")
+
+    // Use modern models+textures to inject QuadProviders
+    devOnlyNonPublishable('com.github.GTNewHorizons:TX-Loader:1.7.2:dev')
 
     // Iris Shaders
     compileOnly('org.jetbrains:annotations:24.0.1')
-    api("com.github.GTNewHorizons:GTNHLib:0.2.1:dev")
-    shadowImplementation("org.joml:joml:1.10.5") // MIT
+    api("com.github.GTNewHorizons:GTNHLib:0.5.20:dev")
     shadowImplementation("org.anarres:jcpp:1.4.14") // Apache 2.0
-    implementation("io.github.douira:glsl-transformer:1.0.0")
-    shadowImplementation("io.github.douira:glsl-transformer:1.0.0") { // glsl-transformer Noncommercial License 1.0.0
+    shadowImplementation("org.taumc:glsl-transformation-lib:0.2.0-4.g6b42bca") {
         exclude module: "antlr4" // we only want to shadow the runtime module
     }
+    shadowImplementation("org.antlr:antlr4-runtime:4.13.2")
     compileOnly "org.apache.ant:ant:1.8.2"
 
     // Because who doesn't want NEI
-    compileOnly('com.github.GTNewHorizons:NotEnoughItems:2.4.9-GTNH:dev')
-    compileOnly('com.github.GTNewHorizons:CodeChickenCore:1.2.0:dev')
+    devOnlyNonPublishable('com.github.GTNewHorizons:NotEnoughItems:2.6.45-GTNH:dev')
+    devOnlyNonPublishable('com.github.GTNewHorizons:CodeChickenCore:1.3.10:dev')
 
     // Notfine Deps
     compileOnly("thaumcraft:Thaumcraft:1.7.10-4.2.3.5:dev")
-    runtimeOnly("com.github.GTNewHorizons:Baubles:1.0.1.16:dev")
-    compileOnly("com.github.GTNewHorizons:twilightforest:2.5.1:dev") {transitive = false }
+    devOnlyNonPublishable("com.github.GTNewHorizons:Baubles:1.0.4:dev")
+    compileOnly("com.github.GTNewHorizons:twilightforest:2.6.35:dev") { transitive = false }
     compileOnly(rfg.deobf('curse.maven:witchery-69673:2234410'))
+    compileOnly("com.github.GTNewHorizons:TinkersConstruct:1.12.14-GTNH:dev") { transitive = false }
+    compileOnly("com.github.GTNewHorizons:Natura:2.7.5:dev")
 
-    compileOnly("com.falsepattern:chunkapi-mc1.7.10:0.5.0:api")
-    compileOnly("com.falsepattern:endlessids-mc1.7.10:1.5-beta0002:dev")
+    compileOnly("com.github.GTNewHorizons:ThaumicHorizons:1.6.4:dev")
+
+    compileOnly("com.github.GTNewHorizons:Battlegear2:1.4.1:dev") { transitive = false }
+    compileOnly(rfg.deobf('maven.modrinth:backhand:1.4.1')) { transitive = false }
+
+    compileOnly("com.falsepattern:chunkapi-mc1.7.10:0.5.1:api") { transitive = false }
+    compileOnly("com.falsepattern:endlessids-mc1.7.10:1.5-beta0003:dev") { transitive = false }
 
     compileOnly(rfg.deobf("curse.maven:extrautils-225561:2264383"))
     compileOnly(rfg.deobf("curse.maven:dynamiclights-227874:2337326"))
 
-    compileOnly("com.github.GTNewHorizons:NotEnoughIds:1.5.3:dev") // Mixin Version
+    compileOnly("curse.maven:minefactory-reloaded-66672:2277486")
+
+    compileOnly("com.github.GTNewHorizons:NotEnoughIds:2.1.6:dev") // Mixin Version
     compileOnly("com.github.GTNewHorizons:NotEnoughIds-Legacy:1.4.7:dev") // ASM Version
 
     compileOnly(rfg.deobf("curse.maven:campfirebackport-387444:4611675"))
-    // HMMMMM
-    compileOnly(rfg.deobf("curse.maven:journeymap-32274:2367915"))
+    compileOnly(rfg.deobf("curse.maven:xaeros-minimap-263420:5060684"))
 
-    runtimeOnly(deobf("https://github.com/makamys/CoreTweaks/releases/download/0.3.3.2/CoreTweaks-1.7.10-0.3.3.2+nomixin.jar"))
+    compileOnly("com.github.GTNewHorizons:HoloInventory:2.4.13-GTNH:dev")
+
+    runtimeOnlyNonPublishable(rfg.deobf("CoreTweaks:CoreTweaks:0.3.3.2"))
 
     // Hodgepodge
     transformedMod("net.industrial-craft:industrialcraft-2:2.2.828-experimental:dev")
+
+    // Better Crashes
+    compileOnly("com.github.GTNewHorizons:BetterCrashes:1.4.0-GTNH:dev")
+
+    // Tests
+    testImplementation(platform('org.junit:junit-bom:5.9.2'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation("org.mockito:mockito-core:3.+")
+    testImplementation("org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209")
 }

@@ -22,13 +22,13 @@ import com.prupe.mcpatcher.mal.resource.ResourceList;
 import com.prupe.mcpatcher.mal.resource.TexturePackAPI;
 import com.prupe.mcpatcher.mal.resource.TexturePackChangeHandler;
 
-import mist475.mcpatcherforge.config.MCPatcherForgeConfig;
+import jss.notfine.config.MCPatcherForgeConfig;
 
 public class CustomAnimation implements Comparable<CustomAnimation> {
 
     private static final MCLogger logger = MCLogger.getLogger(MCLogger.Category.EXTENDED_HD, "Animation");
 
-    private static final boolean enable = MCPatcherForgeConfig.instance().animations;
+    private static final boolean enable = MCPatcherForgeConfig.ExtendedHD.animations;
     private static final Set<PropertiesFile> pending = new HashSet<>();
     private static final List<CustomAnimation> animations = new ArrayList<>();
 
@@ -340,7 +340,7 @@ public class CustomAnimation implements Comparable<CustomAnimation> {
             if (value != null && value.matches("^\\d+$")) {
                 return Integer.parseInt(value);
             }
-        } catch (NumberFormatException e) {}
+        } catch (NumberFormatException ignore) {}
         return null;
     }
 

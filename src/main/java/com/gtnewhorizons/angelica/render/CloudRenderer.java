@@ -21,14 +21,15 @@
 
 package com.gtnewhorizons.angelica.render;
 
-import com.gtnewhorizons.angelica.client.renderer.CapturingTessellator;
-import com.gtnewhorizons.angelica.compat.mojang.DefaultVertexFormat;
-import com.gtnewhorizons.angelica.compat.mojang.VertexBuffer;
-import com.gtnewhorizons.angelica.compat.mojang.VertexFormat;
+import com.gtnewhorizon.gtnhlib.client.renderer.CapturingTessellator;
+import com.gtnewhorizon.gtnhlib.client.renderer.TessellatorManager;
+import com.gtnewhorizon.gtnhlib.client.renderer.vbo.VBOManager;
+import com.gtnewhorizon.gtnhlib.client.renderer.vbo.VertexBuffer;
+import com.gtnewhorizon.gtnhlib.client.renderer.vertex.DefaultVertexFormat;
+import com.gtnewhorizon.gtnhlib.client.renderer.vertex.VertexFormat;
 import com.gtnewhorizons.angelica.glsm.GLStateManager;
-import com.gtnewhorizons.angelica.glsm.TessellatorManager;
-import com.gtnewhorizons.angelica.glsm.VBOManager;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import jss.notfine.core.Settings;
+import jss.notfine.gui.options.named.GraphicsQualityOff;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -63,6 +64,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
     private VertexBuffer vbo;
     private int cloudMode = -1;
     private int renderDistance = -1;
+    private int cloudElevation = -1;
+    private int scaleMult = -1;
 
     private DynamicTexture COLOR_TEX = null;
 
@@ -81,9 +84,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
         return instance;
     }
 
-
     private int getScale() {
-        return cloudMode == 2 ? 12 : 8;
+        return (cloudMode == 2 ? 12 : 8) * scaleMult;
     }
 
     private float ceilToScale(float value) {
@@ -92,7 +94,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
     }
 
     private void vertices(CapturingTessellator tessellator) {
-        boolean fancy = SodiumClientMod.options().quality.cloudQuality.isFancy();
+        GraphicsQualityOff cloudGraphicsQuality = (GraphicsQualityOff)Settings.MODE_CLOUDS.option.getStore();
+        boolean fancy = cloudGraphicsQuality == GraphicsQualityOff.FANCY || cloudGraphicsQuality == GraphicsQualityOff.DEFAULT && mc.gameSettings.fancyGraphics;
 
         float scale = getScale();
         float CULL_DIST = 2 * scale;
@@ -137,11 +140,12 @@ public class CloudRenderer implements IResourceManagerReloadListener {
                 tessellator.pos(sectX0, 0, sectZ1).tex(u0, v1).color(bCol, bCol, bCol, ALPHA).endVertex();
 
                 if (fancy) {
+                    final int height = HEIGHT * scaleMult;
                     // Top
-                    tessellator.pos(sectX0, HEIGHT, sectZ0).tex(u0, v0).color(1, 1, 1, ALPHA).endVertex();
-                    tessellator.pos(sectX0, HEIGHT, sectZ1).tex(u0, v1).color(1, 1, 1, ALPHA).endVertex();
-                    tessellator.pos(sectX1, HEIGHT, sectZ1).tex(u1, v1).color(1, 1, 1, ALPHA).endVertex();
-                    tessellator.pos(sectX1, HEIGHT, sectZ0).tex(u1, v0).color(1, 1, 1, ALPHA).endVertex();
+                    tessellator.pos(sectX0, height, sectZ0).tex(u0, v0).color(1, 1, 1, ALPHA).endVertex();
+                    tessellator.pos(sectX0, height, sectZ1).tex(u0, v1).color(1, 1, 1, ALPHA).endVertex();
+                    tessellator.pos(sectX1, height, sectZ1).tex(u1, v1).color(1, 1, 1, ALPHA).endVertex();
+                    tessellator.pos(sectX1, height, sectZ0).tex(u1, v0).color(1, 1, 1, ALPHA).endVertex();
 
                     float slice;
                     float sliceCoord0;
@@ -155,8 +159,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
                         if (slice > -CULL_DIST) {
                             slice += INSET;
                             tessellator.pos(slice, 0, sectZ1).tex(sliceCoord0, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
-                            tessellator.pos(slice, HEIGHT, sectZ1).tex(sliceCoord1, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
-                            tessellator.pos(slice, HEIGHT, sectZ0).tex(sliceCoord1, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
+                            tessellator.pos(slice, height, sectZ1).tex(sliceCoord1, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
+                            tessellator.pos(slice, height, sectZ0).tex(sliceCoord1, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
                             tessellator.pos(slice, 0, sectZ0).tex(sliceCoord0, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
                             slice -= INSET;
                         }
@@ -166,8 +170,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
                         if (slice <= CULL_DIST) {
                             slice -= INSET;
                             tessellator.pos(slice, 0, sectZ0).tex(sliceCoord0, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
-                            tessellator.pos(slice, HEIGHT, sectZ0).tex(sliceCoord1, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
-                            tessellator.pos(slice, HEIGHT, sectZ1).tex(sliceCoord1, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
+                            tessellator.pos(slice, height, sectZ0).tex(sliceCoord1, v0).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
+                            tessellator.pos(slice, height, sectZ1).tex(sliceCoord1, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
                             tessellator.pos(slice, 0, sectZ1).tex(sliceCoord0, v1).color(0.9F, 0.9F, 0.9F, ALPHA).endVertex();
                             slice += INSET;
                         }
@@ -181,8 +185,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
                         if (slice > -CULL_DIST) {
                             slice += INSET;
                             tessellator.pos(sectX0, 0, slice).tex(u0, sliceCoord0).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
-                            tessellator.pos(sectX0, HEIGHT, slice).tex(u0, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
-                            tessellator.pos(sectX1, HEIGHT, slice).tex(u1, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
+                            tessellator.pos(sectX0, height, slice).tex(u0, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
+                            tessellator.pos(sectX1, height, slice).tex(u1, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
                             tessellator.pos(sectX1, 0, slice).tex(u1, sliceCoord0).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
                             slice -= INSET;
                         }
@@ -192,8 +196,8 @@ public class CloudRenderer implements IResourceManagerReloadListener {
                         if (slice <= CULL_DIST) {
                             slice -= INSET;
                             tessellator.pos(sectX1, 0, slice).tex(u1, sliceCoord0).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
-                            tessellator.pos(sectX1, HEIGHT, slice).tex(u1, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
-                            tessellator.pos(sectX0, HEIGHT, slice).tex(u0, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
+                            tessellator.pos(sectX1, height, slice).tex(u1, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
+                            tessellator.pos(sectX0, height, slice).tex(u0, sliceCoord1).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
                             tessellator.pos(sectX0, 0, slice).tex(u0, sliceCoord0).color(0.8F, 0.8F, 0.8F, ALPHA).endVertex();
                             slice += INSET;
                         }
@@ -235,20 +239,33 @@ public class CloudRenderer implements IResourceManagerReloadListener {
     }
 
     public void checkSettings() {
-        final int cloudQualitySetting =  SodiumClientMod.options().quality.cloudQuality.isFancy() ? 2 : 1;
-        boolean newEnabled = mc.gameSettings.shouldRenderClouds()
+        GraphicsQualityOff cloudGraphicsQuality = (GraphicsQualityOff)Settings.MODE_CLOUDS.option.getStore();
+        final int cloudQualitySetting = cloudGraphicsQuality == GraphicsQualityOff.FANCY
+            || cloudGraphicsQuality == GraphicsQualityOff.DEFAULT && mc.gameSettings.fancyGraphics ? 2 : 1;
+        final boolean newEnabled = mc.gameSettings.shouldRenderClouds()
             && mc.theWorld != null
             && mc.theWorld.provider.isSurfaceWorld();
+        final int targetDistance = Math.max(mc.gameSettings.renderDistanceChunks, (int)Settings.RENDER_DISTANCE_CLOUDS.option.getStore());
+        final int cloudScaleMult = (int)Settings.CLOUD_SCALE.option.getStore();
 
         if (isBuilt()
             && (!newEnabled
             || cloudQualitySetting != cloudMode
-            || mc.gameSettings.renderDistanceChunks != renderDistance)) {
+            || targetDistance != renderDistance
+            || cloudScaleMult != scaleMult)) {
             dispose();
         }
 
         cloudMode = cloudQualitySetting;
-        renderDistance = mc.gameSettings.renderDistanceChunks;
+        renderDistance = targetDistance;
+        scaleMult = cloudScaleMult;
+
+        cloudElevation = mc.theWorld == null ? 128 : (int)mc.theWorld.provider.getCloudHeight();
+        //Allows the setting to work with RFG and similar without hardcoding.
+        //The minimum height check is so stuff like Aether cloud height doesn't get messed up.
+        if(cloudElevation >= 96) {
+            cloudElevation = (int)Settings.CLOUD_HEIGHT.option.getStore();
+        }
 
         if (newEnabled && !isBuilt()) {
             build();
@@ -264,7 +281,7 @@ public class CloudRenderer implements IResourceManagerReloadListener {
         double totalOffset = cloudTicks + partialTicks;
 
         double x = entity.prevPosX + (entity.posX - entity.prevPosX) * partialTicks + totalOffset * 0.03;
-        double y = mc.theWorld.provider.getCloudHeight() - (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks) + 0.33;
+        double y = cloudElevation - (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks) + 0.33;
         double z = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * partialTicks;
 
         int scale = getScale();

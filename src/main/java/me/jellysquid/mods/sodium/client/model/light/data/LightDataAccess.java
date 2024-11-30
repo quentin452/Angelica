@@ -1,6 +1,8 @@
 package me.jellysquid.mods.sodium.client.model.light.data;
 
-import com.gtnewhorizons.angelica.compat.mojang.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizons.angelica.dynamiclights.DynamicLights;
+import me.jellysquid.mods.sodium.client.util.StateUtil;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.minecraft.block.Block;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -21,7 +23,7 @@ import net.minecraftforge.common.util.ForgeDirection;
  * You can use the various static pack/unpack methods to extract these values in a usable format.
  */
 public abstract class LightDataAccess {
-    private final BlockPos.Mutable pos = new BlockPos.Mutable();
+    public static final ThreadLocal<BlockPos> DynamicLightsPos = ThreadLocal.withInitial(BlockPos::new);
     protected WorldSlice world;
 
     public long get(int x, int y, int z, ForgeDirection d1, ForgeDirection d2) {
@@ -47,7 +49,7 @@ public abstract class LightDataAccess {
     public abstract long get(int x, int y, int z);
 
     protected long compute(int x, int y, int z) {
-        final BlockPos pos = this.pos.set(x, y, z);
+
         final WorldSlice world = this.world;
 
         final Block block = world.getBlock(x, y, z);
@@ -63,11 +65,11 @@ public abstract class LightDataAccess {
             em = true;
         }
 
-        // First is shouldBlockVision, but I can't find if any transparent objects set it
-        final boolean op = /*state.shouldBlockVision(world, pos) ||*/ block.getLightOpacity() == 0;
+        // First is shouldBlockVision on modern
+        final boolean op = !block.isOpaqueCube() || block.getLightOpacity() == 0;
         final boolean fo = block.isOpaqueCube();
         // Should be isFullCube, but this is probably close enough
-        final boolean fc = block.renderAsNormalBlock();
+        final boolean fc = StateUtil.areBoundsFullCube(block);
 
         // OPTIMIZE: Do not calculate lightmap data if the block is full and opaque.
         // FIX: Calculate lightmap data for light-emitting or emissive blocks, even though they are full and opaque.
@@ -116,6 +118,19 @@ public abstract class LightDataAccess {
     public static float unpackAO(long word) {
         int aoi = (int) (word >>> 32 & 0xFFFFL);
         return aoi * (1.0f / 4096.0f);
+    }
+
+    public static int getLightMap(long originWord) {
+        if (!DynamicLights.isEnabled()) {
+            return unpackLM(originWord);
+        }
+        if (unpackFO(originWord)){
+            return unpackLM(originWord);
+        }
+
+        double dynamic = DynamicLights.get().getDynamicLightLevel(DynamicLightsPos.get());
+        return DynamicLights.get().getLightmapWithDynamicLight(dynamic, unpackLM(originWord));
+
     }
 
     public WorldSlice getWorld() {
