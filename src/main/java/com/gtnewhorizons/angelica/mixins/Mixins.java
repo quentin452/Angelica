@@ -51,13 +51,6 @@ public enum Mixins {
         )
     ),
 
-    ANGELICA_ENABLE_DEBUG(new Builder("Angelica Debug").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaMod.lwjglDebug).addMixinClasses(
-             "angelica.debug.MixinProfiler"
-            ,"angelica.debug.MixinSplashProgress"
-            ,"angelica.debug.MixinTextureManager"
-        )
-    ),
     ANGELICA_DYNAMIC_LIGHTS(new Builder("Angelica Dynamic Lights").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.enableDynamicLights).addMixinClasses(
             "angelica.dynamiclights.MixinEntityRenderer"
@@ -82,14 +75,6 @@ public enum Mixins {
         .setPhase(Phase.EARLY).addMixinClasses("angelica.itemrenderer.MixinItemRenderer").setSide(Side.CLIENT)
         .setApplyIf(() -> AngelicaConfig.optimizeInWorldItemRendering)
         .addTargetedMod(TargetedMod.VANILLA)),
-
-    // Not compatible with the lwjgl debug callbacks, so disable if that's enabled
-    ARCHAIC_SPLASH(new Builder("ArchaicFix Splash").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
-        .setPhase(Phase.EARLY).setApplyIf(() -> AngelicaConfig.showSplashMemoryBar && !AngelicaMod.lwjglDebug).addMixinClasses(
-              "angelica.archaic.MixinSplashProgress"
-             ,"angelica.archaic.AccessorSplashProgress"
-        )
-    ),
 
     ARCHAIC_CORE(new Builder("Archaic Core").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
         .setPhase(Phase.EARLY).addMixinClasses(

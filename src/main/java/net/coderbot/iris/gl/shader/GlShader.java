@@ -2,16 +2,12 @@
 
 package net.coderbot.iris.gl.shader;
 
-import com.gtnewhorizons.angelica.glsm.GLDebug;
 import com.gtnewhorizons.angelica.glsm.RenderSystem;
 import net.coderbot.iris.gl.GlResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.KHRDebug;
-
-import java.util.Locale;
 
 /**
  * A compiled OpenGL shader object.
@@ -34,8 +30,6 @@ public class GlShader extends GlResource {
         // TODO: ShaderWorkaround
         GL20.glShaderSource(handle, src + '\0');
 		GL20.glCompileShader(handle);
-
-		GLDebug.nameObject(KHRDebug.GL_SHADER, handle, name + "(" + type.name().toLowerCase(Locale.ROOT) + ")");
 
 		String log = RenderSystem.getShaderInfoLog(handle);
 

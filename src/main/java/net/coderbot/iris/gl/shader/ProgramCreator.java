@@ -2,13 +2,11 @@
 
 package net.coderbot.iris.gl.shader;
 
-import com.gtnewhorizons.angelica.glsm.GLDebug;
 import com.gtnewhorizons.angelica.glsm.RenderSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.KHRDebug;
 
 public class ProgramCreator {
 	private static final Logger LOGGER = LogManager.getLogger(ProgramCreator.class);
@@ -27,8 +25,6 @@ public class ProgramCreator {
 		}
 
         GL20.glLinkProgram(program);
-
-		GLDebug.nameObject(KHRDebug.GL_PROGRAM, program, name);
 
 		//Always detach shaders according to https://www.khronos.org/opengl/wiki/Shader_Compilation#Cleanup
         for (GlShader shader : shaders) {

@@ -246,15 +246,6 @@ public class GLStateManager {
         if(BYPASS_CACHE) {
             LOGGER.info("GLStateManager cache bypassed");
         }
-        if(AngelicaMod.lwjglDebug) {
-            LOGGER.info("Enabling additional LWJGL debug output");
-
-            GLDebug.setupDebugMessageCallback();
-            GLDebug.initDebugState();
-
-            GLDebug.debugMessage("Angelica Debug Annotator Initialized");
-        }
-
     }
 
     public static boolean isMainThread() {
@@ -1379,8 +1370,6 @@ public class GLStateManager {
             getMatrixStack().pushMatrix();
         } catch(IllegalStateException ignored) {
             // Ignore
-            if(AngelicaMod.lwjglDebug)
-                AngelicaTweaker.LOGGER.warn("Matrix stack overflow ", new Throwable());
         }
     }
 
@@ -1390,8 +1379,6 @@ public class GLStateManager {
             getMatrixStack().popMatrix();
         } catch(IllegalStateException ignored) {
             // Ignore
-            if(AngelicaMod.lwjglDebug)
-                AngelicaTweaker.LOGGER.warn("Matrix stack underflow ", new Throwable());
         }
     }
 
@@ -1796,10 +1783,6 @@ public class GLStateManager {
     public static void glUseProgram(int program) {
         if(program != activeProgram || shouldBypassCache()) {
             activeProgram = program;
-            if(AngelicaMod.lwjglDebug) {
-                final String programName = GLDebug.getObjectLabel(KHRDebug.GL_PROGRAM, program);
-                GLDebug.debugMessage("Activating Program - " + program + ":" + programName);
-            }
             GL20.glUseProgram(program);
         }
     }

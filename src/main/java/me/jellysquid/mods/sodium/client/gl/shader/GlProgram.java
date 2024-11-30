@@ -1,6 +1,5 @@
 package me.jellysquid.mods.sodium.client.gl.shader;
 
-import com.gtnewhorizons.angelica.glsm.GLDebug;
 import me.jellysquid.mods.sodium.client.gl.GlObject;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import net.minecraft.util.ResourceLocation;
@@ -8,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.KHRDebug;
 
 /**
  * An OpenGL shader program.
@@ -70,7 +68,6 @@ public abstract class GlProgram extends GlObject {
         public Builder(ResourceLocation name) {
             this.name = name;
             this.program = GL20.glCreateProgram();
-            GLDebug.nameObject(KHRDebug.GL_PROGRAM, program, name.toString());
         }
 
         public Builder attachShader(GlShader shader) {
