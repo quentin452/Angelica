@@ -11,6 +11,7 @@ import com.gtnewhorizons.angelica.mixins.interfaces.GuiIngameForgeAccessor;
 import com.gtnewhorizons.angelica.mixins.interfaces.RenderGameOverlayEventAccessor;
 import com.kentington.thaumichorizons.common.ThaumicHorizons;
 import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import net.dries007.holoInventory.client.Renderer;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -71,10 +72,27 @@ public class HUDCaching {
     public void onJoinWorld(WorldEvent.Load event) {
         if (event.world.isRemote){
             LOGGER.info("World loaded - Initializing HUDCaching");
-            HUDCaching.framebuffer = new Framebuffer(0, 0, true);
+            int framebufferWidth = Minecraft.getMinecraft().displayWidth;
+            int framebufferHeight = Minecraft.getMinecraft().displayHeight;
+            HUDCaching.framebuffer = new Framebuffer(framebufferWidth, framebufferHeight, true);
             HUDCaching.framebuffer.setFramebufferColor(0, 0, 0, 0);
         }
     }
+
+    @SubscribeEvent
+    public void onTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            int framebufferWidth = Minecraft.getMinecraft().displayWidth;
+            int framebufferHeight = Minecraft.getMinecraft().displayHeight;
+
+            if (framebuffer != null && (framebuffer.framebufferWidth != framebufferWidth || framebuffer.framebufferHeight != framebufferHeight)) {
+                framebuffer.createBindFramebuffer(framebufferWidth, framebufferHeight);
+                framebuffer.setFramebufferFilter(GL11.GL_NEAREST);
+                //LOGGER.info("Updated Framebuffer dimensions - Width: {}, Height: {}", framebufferWidth, framebufferHeight);
+            }
+        }
+    }
+
 
     @SuppressWarnings("unused")
     public static void renderCachedHud(EntityRenderer renderer, GuiIngame ingame, float partialTicks, boolean hasScreen, int mouseX, int mouseY) {
