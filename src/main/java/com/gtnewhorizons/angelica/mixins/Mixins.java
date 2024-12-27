@@ -73,7 +73,7 @@ public enum Mixins {
 
     ANGELICA_ITEM_DISPLAY_LIST_OPTIMIZATION(new Builder("Optimized item rendering by wrapping them with display lists")
         .setPhase(Phase.EARLY).addMixinClasses("angelica.itemrenderer.MixinItemRenderer").setSide(Side.CLIENT)
-        .setApplyIf(() -> AngelicaConfig.optimizeInWorldItemRendering)
+        .setApplyIf(() -> AngelicaConfig.optimizeInWorldItemRendering_WIP)
         .addTargetedMod(TargetedMod.VANILLA)),
 
     ARCHAIC_CORE(new Builder("Archaic Core").addTargetedMod(TargetedMod.VANILLA).setSide(Side.CLIENT)
@@ -122,6 +122,7 @@ public enum Mixins {
             ,"sodium.MixinRenderGlobal"
             ,"sodium.MixinWorldClient"
             ,"sodium.MixinTileEntity"
+            ,"sodium.MixinTileEntityMobSpawner"
             ,"sodium.MixinEffectRenderer"
             ,"sodium.MixinTileEntityRendererDispatcher"
             ,"sodium.MixinLongHashMap"

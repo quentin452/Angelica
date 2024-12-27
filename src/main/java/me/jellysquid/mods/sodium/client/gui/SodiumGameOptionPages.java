@@ -127,6 +127,15 @@ public class SodiumGameOptionPages {
                             }
                         }, (opts) -> opts.fullScreen)
                         .build())
+                .add(OptionImpl.createBuilder(boolean.class, angelicaOpts)
+                    .setName(I18n.format("options.angelica.sleepbeforeswap"))
+                    .setTooltip(I18n.format("options.angelica.sleepbeforeswap.tooltip"))
+                    .setControl(TickBoxControl::new)
+                    .setBinding((opts, value) -> {
+                        AngelicaConfig.sleepBeforeSwap = value;
+                    }, opts -> AngelicaConfig.sleepBeforeSwap)
+                    .setImpact(OptionImpact.VARIES)
+                    .build())
                 .add(OptionImpl.createBuilder(boolean.class, vanillaOpts)
                         .setName(I18n.format("options.vsync"))
                         .setTooltip(I18n.format("sodium.options.v_sync.tooltip"))
@@ -164,6 +173,15 @@ public class SodiumGameOptionPages {
                         .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
+                .add(
+                    OptionImpl.createBuilder(int.class, angelicaOpts)
+                        .setName(I18n.format("options.angelica.mobSpawnerRenderDistance"))
+                        .setTooltip(I18n.format("options.angelica.mobSpawnerRenderDistance.tooltip"))
+                        .setControl(option -> new SliderControl(option, 16, 64, 1, ControlValueFormatter.number()))
+                        .setBinding((options, value) -> AngelicaConfig.mobSpawnerRenderDistance = value, options -> (int) AngelicaConfig.mobSpawnerRenderDistance)
+                        .setImpact(OptionImpact.MEDIUM)
+                        .build()
+                )
                 .build());
 
         return new OptionPage(I18n.format("stat.generalButton"), ImmutableList.copyOf(groups));
@@ -178,8 +196,10 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.graphics_quality.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, GraphicsMode.class))
                         .setBinding(
-                                (opts, value) -> { opts.fancyGraphics = value.isFancy();
-                                    SettingsManager.graphicsUpdated(); },
+                                (opts, value) -> {
+                                    opts.fancyGraphics = value.isFancy();
+                                    SettingsManager.graphicsUpdated();
+                                    },
                                 opts -> GraphicsMode.fromBoolean(opts.fancyGraphics))
                         .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)

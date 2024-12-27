@@ -138,14 +138,23 @@ public class AngelicaConfig {
     @Config.RequiresMcRestart
     public static boolean enableZoom;
 
-    @Config.Comment("Optimizes in-world item rendering")
-    @Config.DefaultBoolean(true)
+    @Config.Comment("Optimizes in-world item rendering [Experimental]")
+    @Config.DefaultBoolean(false)
     @Config.RequiresMcRestart
-    public static boolean optimizeInWorldItemRendering;
+    public static boolean optimizeInWorldItemRendering_WIP;
 
     @Config.Comment("Max amount of display lists to cache for optimized item rendering. Higher number will use more VRAM")
     @Config.DefaultInt(256)
     @Config.RangeInt(min = 64, max = 1024)
     public static int itemRendererDisplayListCacheSize;
 
+    @Config.Comment("Render distance for the spinning mob inside mod spawners")
+    @Config.DefaultDouble(16D)
+    @Config.RangeDouble(min = 16D, max = 64D)
+    public static double mobSpawnerRenderDistance;
+
+    @Config.Comment("Switches to an alternate FPS limiter that gives more stable frametimes, in exchange for slightly " +
+        "more latency. Will never introduce more than one frame of latency, and has a lower impact at higher framerates.")
+    @Config.DefaultBoolean(false)
+    public static boolean sleepBeforeSwap;
 }
