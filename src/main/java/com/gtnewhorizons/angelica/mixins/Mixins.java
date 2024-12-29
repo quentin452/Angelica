@@ -337,17 +337,6 @@ public enum Mixins {
         .addTargetedMod(TargetedMod.WITCHERY)
         .addMixinClasses("notfine.leaves.witchery.MixinBlockWitchLeaves")
     ),
-    NOTFINE_TWILIGHT_FOREST(new Builder("NotFine Twilight Forest compat")
-        .setSide(Side.CLIENT).setPhase(Phase.LATE)
-        .setApplyIf(() -> AngelicaConfig.enableNotFineFeatures)
-        .addTargetedMod(TargetedMod.TWILIGHT_FOREST)
-        .addMixinClasses(addPrefix("notfine.leaves.twilightforest.",
-            "MixinBlockTFLeaves",
-            "MixinBlockTFLeaves3",
-            // TODO: Verify 2.3.8.18 or later to support non NH builds?
-            "MixinBlockTFMagicLeaves"
-        ))
-    ),
     MCPATCHER_FORGE(new Builder("MCPatcher Forge")
         .setSide(Side.CLIENT).setPhase(Phase.EARLY)
         .setApplyIf(() -> AngelicaConfig.enableMCPatcherForgeFeatures)
